@@ -18,19 +18,22 @@ class DashboardScreen extends StatefulWidget {
   });
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  State<DashboardScreen> createState() => DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
   bool _showBalance = true;
   String _selectedPeriod = 'this_month'; // this_month, last_3_months, this_year, all
+  String _displayName = 'Pemilik';
 
   List<AccountModel> _accounts = [];
   List<CategoryModel> _categories = [];
   List<TransactionModel> _transactions = [];
 
   num _totalBalance = 0;
+
+  void reload() => _loadData();
 
   @override
   void initState() {
@@ -47,15 +50,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
     try {
-      final accounts = await SupabaseService.instance.getAccounts();
-      final categories = await SupabaseService.instance.getCategories();
-      final transactions = await SupabaseService.instance.getTransactions(limit: 50);
+      final accountsFuture = SupabaseService.instance.getAccounts();
+      final categoriesFuture = SupabaseService.instance.getCategories();
+      final transactionsFuture = SupabaseService.instance.getTransactions(limit: 50);
+      final profileNameFuture = SupabaseService.instance.getDisplayName();
+
+      final accounts = await accountsFuture;
+      final categories = await categoriesFuture;
+      final transactions = await transactionsFuture;
+      final profileName = await profileNameFuture;
 
       num totalBal = 0;
       for (final a in accounts) {
         if (a.isActive) totalBal += a.currentBalance;
+      }
+
+      final userEmail = SupabaseService.instance.currentUser?.email;
+      String computedName = 'Pemilik';
+      if (profileName != null && profileName.trim().isNotEmpty) {
+        computedName = profileName.trim();
+      } else if (userEmail != null && userEmail.contains('@')) {
+        computedName = userEmail.split('@')[0];
       }
 
       if (mounted) {
@@ -64,6 +80,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _categories = categories;
           _transactions = transactions;
           _totalBalance = totalBal;
+          _displayName = computedName;
           _isLoading = false;
         });
       }
@@ -129,8 +146,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    final userEmail = SupabaseService.instance.currentUser?.email ?? 'Pemilik';
-    final displayName = userEmail.contains('@') ? userEmail.split('@')[0] : userEmail;
+    final displayName = _displayName;
 
     return Scaffold(
       backgroundColor: NabangColors.background,

@@ -18,11 +18,15 @@ class MainNavScreen extends StatefulWidget {
 
 class _MainNavScreenState extends State<MainNavScreen> {
   int _currentIndex = 0;
+  final GlobalKey<DashboardScreenState> _dashboardKey = GlobalKey<DashboardScreenState>();
 
   void _onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
     });
+    if (index == 0) {
+      _dashboardKey.currentState?.reload();
+    }
   }
 
   Future<void> _logout() async {
@@ -59,6 +63,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
   Widget build(BuildContext context) {
     final screens = [
       DashboardScreen(
+        key: _dashboardKey,
         onNavigateTab: _onTabTapped,
         onLogout: _logout,
       ),
@@ -66,7 +71,11 @@ class _MainNavScreenState extends State<MainNavScreen> {
       const AccountsScreen(),
       const GoalsScreen(),
       const BudgetsScreen(),
-      const SettingsScreen(),
+      SettingsScreen(
+        onProfileUpdated: () {
+          _dashboardKey.currentState?.reload();
+        },
+      ),
     ];
 
     return Scaffold(
