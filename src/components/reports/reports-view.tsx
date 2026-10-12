@@ -9,7 +9,6 @@ import {
   Download,
   PieChart,
   Scale,
-  Sparkles,
   TrendingUp,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -308,12 +307,9 @@ export function ReportsView({
         {/* Pengeluaran per Kategori */}
         <section aria-labelledby="expense-cat-heading" className="rounded-3xl border border-border bg-card p-6 shadow-xs">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-[#b34455] dark:text-[#ffb9c3]" />
-              <h3 className="text-base font-bold text-foreground" id="expense-cat-heading">
-                Distribusi Pengeluaran
-              </h3>
-            </div>
+            <h3 className="text-base font-bold text-foreground" id="expense-cat-heading">
+              Distribusi Pengeluaran
+            </h3>
             <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-800 dark:bg-rose-950 dark:text-rose-300">
               {expenseByCategory.length} pos
             </span>
@@ -354,12 +350,9 @@ export function ReportsView({
         {/* Pemasukan per Kategori */}
         <section aria-labelledby="income-cat-heading" className="rounded-3xl border border-border bg-card p-6 shadow-xs">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-emerald-600 dark:text-emerald-400" />
-              <h3 className="text-base font-bold text-foreground" id="income-cat-heading">
-                Distribusi Pemasukan
-              </h3>
-            </div>
+            <h3 className="text-base font-bold text-foreground" id="income-cat-heading">
+              Distribusi Pemasukan
+            </h3>
             <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
               {incomeByCategory.length} pos
             </span>

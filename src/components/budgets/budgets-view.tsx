@@ -13,7 +13,6 @@ import {
   PiggyBank,
   Plus,
   ShieldAlert,
-  Sparkles,
   Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -161,12 +160,9 @@ export function BudgetsView({
       >
         <div className="grid gap-6 sm:grid-cols-2">
           <div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-[#b34455] dark:text-[#ffb9c3]" />
-              <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase" id="budget-summary-heading">
-                Total Plafon Anggaran ({formatMonthLabel(selectedMonth)})
-              </h2>
-            </div>
+            <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase" id="budget-summary-heading">
+              Total Plafon Anggaran ({formatMonthLabel(selectedMonth)})
+            </h2>
             <p className="mt-2 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
               {formatRupiah(totalBudgetLimit)}
             </p>

@@ -18,7 +18,6 @@ import {
   PieChart,
   Plus,
   Scale,
-  Sparkles,
   Target,
   Wallet,
   Wifi,
@@ -167,11 +166,6 @@ export function DashboardView({
             Pantau dan kelola keuangan harian Anda dengan mudah.
           </p>
         </div>
-
-        <div className="flex items-center gap-2 self-start rounded-full border border-pink-200 bg-pink-50/80 px-3 py-1.5 text-xs font-medium text-pink-900 backdrop-blur-xs sm:self-auto dark:border-pink-900/50 dark:bg-pink-950/40 dark:text-pink-200">
-          <Sparkles className="size-3.5 text-pink-600 dark:text-pink-300" />
-          <span>Nabang Platinum Priority</span>
-        </div>
       </div>
 
       {/* Hero Section: Kartu Virtual ala Livin' Mandiri Versi Pink & Banner Bergambar */}
@@ -249,10 +243,6 @@ export function DashboardView({
         <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl border border-pink-200/80 bg-gradient-to-br from-pink-50/90 via-white to-rose-50/80 p-6 shadow-sm sm:p-7 lg:col-span-6 xl:col-span-7 dark:border-pink-900/40 dark:from-[#2d1e22] dark:via-[#211518] dark:to-[#351e24]">
           <div className="flex flex-col-reverse gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex-1 space-y-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-pink-100 px-3 py-1 text-xs font-bold text-pink-900 dark:bg-pink-950 dark:text-pink-200">
-                <Sparkles className="size-3.5 text-[#b34455] dark:text-[#ffb9c3]" />
-                Nabang Impian
-              </span>
               <h3 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
                 Wujudkan Target Finansial Anda
               </h3>

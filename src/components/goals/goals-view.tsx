@@ -14,7 +14,6 @@ import {
   Pause,
   Play,
   Plus,
-  Sparkles,
   Target,
   Trash2,
 } from "lucide-react";
@@ -82,12 +81,9 @@ export function GoalsView({ accounts, goals }: GoalsViewProps) {
       >
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-[#b34455] dark:text-[#ffb9c3]" />
-              <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase" id="goals-summary-heading">
-                Tabungan Rencana & Target Impian
-              </h2>
-            </div>
+            <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase" id="goals-summary-heading">
+              Tabungan Rencana & Target Impian
+            </h2>
             <div className="mt-2 flex flex-wrap items-baseline gap-2">
               <span className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
                 {formatRupiah(totalSaved)}

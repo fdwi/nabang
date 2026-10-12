@@ -10,7 +10,6 @@ import {
   Lock,
   Mail,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 import { useActionState, useState } from "react";
@@ -166,10 +165,6 @@ export function LoginForm({ configured }: { configured: boolean }) {
             <div>
               <div className="flex items-center gap-3">
                 <BrandLogo className="text-[#fb7185]" />
-                <span className="rounded-full border border-pink-400/30 bg-pink-500/10 px-3 py-1 text-xs font-semibold text-pink-300">
-                  <Sparkles className="mr-1 inline-block size-3.5" />
-                  Nabang Web Portal
-                </span>
               </div>
 
               <div className="mt-10 space-y-4">

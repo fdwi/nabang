@@ -14,7 +14,6 @@ import {
   Plus,
   ReceiptText,
   Search,
-  Sparkles,
   Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -143,12 +142,6 @@ export function TransactionsView({
       {/* Header Mutasi Rekening ala Livin' Banking */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <div className="flex items-center gap-2">
-            <Sparkles className="size-4 text-[#b34455] dark:text-[#ffb9c3]" />
-            <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-              Riwayat & Mutasi
-            </span>
-          </div>
           <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Mutasi Transaksi
           </h2>

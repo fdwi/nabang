@@ -14,7 +14,6 @@ import {
   CreditCard,
   Plus,
   Power,
-  Sparkles,
   Trash2,
   Wallet,
   Wifi,
@@ -115,12 +114,9 @@ export function AccountsView({
       >
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-[#b34455] dark:text-[#ffb9c3]" />
-              <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase" id="total-balance-heading">
-                Total Saldo Seluruh Akun Aktif
-              </h2>
-            </div>
+            <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase" id="total-balance-heading">
+              Total Saldo Seluruh Akun Aktif
+            </h2>
             <p className="mt-2 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
               {formatRupiah(totalBalance)}
             </p>
