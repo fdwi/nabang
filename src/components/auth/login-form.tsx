@@ -24,46 +24,20 @@ export function LoginForm({ configured }: { configured: boolean }) {
   return (
     <main className="min-h-dvh w-full">
       {/* ============================================================== */}
-      {/* 1. TAMPILAN HP (MOBILE ONLY: < lg): Livin' Pink Bersih & Rapi  */}
+      {/* 1. TAMPILAN HP (MOBILE ONLY: < lg): Minimalis & Logo Nabang   */}
       {/* ============================================================== */}
       <div className="relative flex min-h-dvh w-full flex-col justify-between overflow-y-auto bg-[#fafbfc] text-slate-800 lg:hidden">
-        {/* Header Bagian Atas: Badge Platinum Priority Sesuai Gambar */}
-        <header className="relative z-10 flex items-center justify-center px-4 pt-6 pb-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-pink-200 bg-pink-50/90 px-3.5 py-1.5 text-xs font-medium text-pink-900 shadow-xs">
-            <Sparkles className="size-3.5 text-pink-600" />
-            <span>Nabang Platinum Priority</span>
-          </div>
-        </header>
-
-        {/* Area Tengah: Visual Splash 3D Pink & Logo Nabang */}
-        <div className="relative my-auto flex flex-col items-center justify-center px-4 py-3">
-          {/* Ilustrasi Liquid Splash 3D Pink */}
-          <div className="relative flex size-64 items-center justify-center sm:size-72">
-            <Image
-              alt="Liquid Splash 3D Pink"
-              className="size-full object-contain drop-shadow-xl"
-              height={288}
-              priority
-              src="/images/livin-pink-splash.jpg"
-              unoptimized
-              width={288}
-            />
-
-            {/* Logo Resmi Nabang di Tengah Splash */}
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-              <div className="flex size-24 items-center justify-center rounded-3xl border-2 border-white/60 bg-white/95 p-2.5 shadow-2xl shadow-rose-950/30 backdrop-blur-md">
-                <Image
-                  alt="Logo Nabang"
-                  className="size-full object-contain"
-                  height={96}
-                  priority
-                  src="/images/logonabang.png"
-                  unoptimized
-                  width={96}
-                />
-              </div>
-            </div>
-          </div>
+        {/* Area Logo Nabang Bersih (Tanpa Background Livin & Tanpa Badge) */}
+        <div className="relative my-auto flex flex-col items-center justify-center px-4 pt-10 pb-4 text-center">
+          <Image
+            alt="Logo Nabang"
+            className="h-28 w-auto object-contain drop-shadow-sm sm:h-32"
+            height={128}
+            priority
+            src="/images/logonabang.png"
+            unoptimized
+            width={128}
+          />
         </div>
 
         {/* Bagian Bawah: Form Login Langsung (Bersih Tanpa Gimmick) */}
