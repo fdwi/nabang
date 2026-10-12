@@ -322,4 +322,30 @@ class SupabaseService {
       });
     }
   }
+
+  // ==================== PROFILE ====================
+
+  Future<String?> getDisplayName() async {
+    final userId = currentUser?.id;
+    if (userId == null) return null;
+
+    final profile = await _client
+        .from('profiles')
+        .select('display_name')
+        .eq('id', userId)
+        .maybeSingle();
+
+    return profile?['display_name'] as String?;
+  }
+
+  Future<void> updateDisplayName(String name) async {
+    final userId = currentUser?.id;
+    if (userId == null) throw Exception('Sesi tidak ditemukan.');
+
+    await _client.from('profiles').upsert({
+      'id': userId,
+      'display_name': name.trim(),
+      'updated_at': DateTime.now().toIso8601String(),
+    });
+  }
 }

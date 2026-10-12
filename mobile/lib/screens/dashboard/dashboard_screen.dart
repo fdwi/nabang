@@ -190,12 +190,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                           onPressed: _loadData,
                         ),
-                        if (widget.onLogout != null)
-                          IconButton(
-                            icon: const Icon(Icons.logout, color: NabangColors.textSecondary, size: 22),
-                            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                            onPressed: widget.onLogout,
-                          ),
+                        IconButton(
+                          icon: const Icon(Icons.settings_outlined, color: NabangColors.textSecondary, size: 22),
+                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                          onPressed: () => widget.onNavigateTab(5),
+                        ),
                       ],
                     ),
                   ],

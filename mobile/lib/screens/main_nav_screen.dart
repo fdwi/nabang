@@ -7,6 +7,7 @@ import 'transactions/transactions_screen.dart';
 import 'accounts/accounts_screen.dart';
 import 'goals/goals_screen.dart';
 import 'budgets/budgets_screen.dart';
+import 'settings/settings_screen.dart';
 
 class MainNavScreen extends StatefulWidget {
   const MainNavScreen({super.key});
@@ -65,6 +66,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
       const AccountsScreen(),
       const GoalsScreen(),
       const BudgetsScreen(),
+      const SettingsScreen(),
     ];
 
     return Scaffold(
@@ -84,6 +86,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
             backgroundColor: Colors.white,
             elevation: 0,
             indicatorColor: NabangColors.primary.withOpacity(0.12),
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.home_outlined),
@@ -109,6 +112,11 @@ class _MainNavScreenState extends State<MainNavScreen> {
                 icon: Icon(Icons.pie_chart_outline),
                 selectedIcon: Icon(Icons.pie_chart, color: NabangColors.primary),
                 label: 'Anggaran',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.settings_outlined),
+                selectedIcon: Icon(Icons.settings, color: NabangColors.primary),
+                label: 'Pengaturan',
               ),
             ],
           ),
