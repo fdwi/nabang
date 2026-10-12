@@ -1,0 +1,18 @@
+# Dependencies and build output
+node_modules/
+.next/
+out/
+
+# Environment files
+.env*.local
+
+# Local tooling
+.vercel/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# System files
+.DS_Store
+Thumbs.db
