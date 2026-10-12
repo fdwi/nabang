@@ -79,43 +79,62 @@ class _MainNavScreenState extends State<MainNavScreen> {
           color: Colors.white,
           border: Border(top: BorderSide(color: NabangColors.border, width: 1)),
         ),
-        child: SafeArea(
+        child: NavigationBarTheme(
+          data: NavigationBarThemeData(
+            height: 62,
+            indicatorColor: NabangColors.primary.withOpacity(0.12),
+            indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            labelTextStyle: WidgetStateProperty.resolveWith((states) {
+              final isSelected = states.contains(WidgetState.selected);
+              return TextStyle(
+                fontSize: 10.5,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? NabangColors.primary : NabangColors.textSecondary,
+              );
+            }),
+            iconTheme: WidgetStateProperty.resolveWith((states) {
+              final isSelected = states.contains(WidgetState.selected);
+              return IconThemeData(
+                size: 22,
+                color: isSelected ? NabangColors.primary : NabangColors.textSecondary,
+              );
+            }),
+          ),
           child: NavigationBar(
             selectedIndex: _currentIndex,
             onDestinationSelected: _onTabTapped,
             backgroundColor: Colors.white,
             elevation: 0,
-            indicatorColor: NabangColors.primary.withOpacity(0.12),
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home, color: NabangColors.primary),
+                selectedIcon: Icon(Icons.home),
                 label: 'Beranda',
               ),
               NavigationDestination(
                 icon: Icon(Icons.receipt_long_outlined),
-                selectedIcon: Icon(Icons.receipt_long, color: NabangColors.primary),
+                selectedIcon: Icon(Icons.receipt_long),
                 label: 'Transaksi',
               ),
               NavigationDestination(
                 icon: Icon(Icons.account_balance_wallet_outlined),
-                selectedIcon: Icon(Icons.account_balance_wallet, color: NabangColors.primary),
+                selectedIcon: Icon(Icons.account_balance_wallet),
                 label: 'Akun',
               ),
               NavigationDestination(
                 icon: Icon(Icons.flag_outlined),
-                selectedIcon: Icon(Icons.flag, color: NabangColors.primary),
+                selectedIcon: Icon(Icons.flag),
                 label: 'Impian',
               ),
               NavigationDestination(
                 icon: Icon(Icons.pie_chart_outline),
-                selectedIcon: Icon(Icons.pie_chart, color: NabangColors.primary),
+                selectedIcon: Icon(Icons.pie_chart),
                 label: 'Anggaran',
               ),
               NavigationDestination(
                 icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings, color: NabangColors.primary),
+                selectedIcon: Icon(Icons.settings),
                 label: 'Pengaturan',
               ),
             ],
