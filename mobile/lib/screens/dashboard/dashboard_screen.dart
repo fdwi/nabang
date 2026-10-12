@@ -139,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           color: NabangColors.primary,
           onRefresh: _loadData,
           child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -202,7 +202,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 18),
 
                 // 2. Kartu Virtual Platinum Pink ala Livin' Mandiri
-                Container(
+                RepaintBoundary(
+                  child: Container(
                   padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
@@ -379,10 +380,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 18),
+              ),
+              const SizedBox(height: 18),
 
-                // 3. Banner Ilustrasi Keuangan 3D (Gaya Livin' Lifestyle Promo)
-                Container(
+              // 3. Banner Ilustrasi Keuangan 3D (Gaya Livin' Lifestyle Promo)
+              RepaintBoundary(
+                child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
@@ -467,7 +470,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 20),
 
                 // 4. Menu Aksi Cepat Ikon Bulat (Grid 6 Menu ala Livin' Mandiri)
                 Container(
@@ -742,87 +746,83 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   )
                 else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _transactions.length > 5 ? 5 : _transactions.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final tx = _transactions[index];
-                      final isIncome = tx.type == 'income';
-                      final isTransfer = tx.type == 'transfer';
-
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: NabangColors.border),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: isTransfer
-                                    ? Colors.blue.withOpacity(0.1)
-                                    : isIncome
-                                        ? NabangColors.success.withOpacity(0.1)
-                                        : NabangColors.danger.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                isTransfer
-                                    ? Icons.swap_horiz
-                                    : isIncome
-                                        ? Icons.arrow_downward
-                                        : Icons.arrow_upward,
-                                size: 18,
-                                color: isTransfer
-                                    ? Colors.blue
-                                    : isIncome
-                                        ? NabangColors.success
-                                        : NabangColors.danger,
-                              ),
+                  Column(
+                    children: [
+                      for (final tx in _transactions.take(5))
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: NabangColors.border),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    tx.description?.isNotEmpty == true
-                                        ? tx.description!
-                                        : (tx.categoryName ?? (isTransfer ? 'Transfer Antar Akun' : 'Transaksi')),
-                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: tx.type == 'transfer'
+                                        ? Colors.blue.withOpacity(0.1)
+                                        : tx.type == 'income'
+                                            ? NabangColors.success.withOpacity(0.1)
+                                            : NabangColors.danger.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    CurrencyFormatter.formatDate(tx.occurredAt),
-                                    style: const TextStyle(fontSize: 11, color: NabangColors.textSecondary),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              '${isIncome ? '+' : isTransfer ? '' : '-'}${CurrencyFormatter.formatRupiah(tx.amount)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                                color: isIncome
-                                    ? NabangColors.success
-                                    : isTransfer
+                                  child: Icon(
+                                    tx.type == 'transfer'
+                                        ? Icons.swap_horiz
+                                        : tx.type == 'income'
+                                            ? Icons.arrow_downward
+                                            : Icons.arrow_upward,
+                                    size: 18,
+                                    color: tx.type == 'transfer'
                                         ? Colors.blue
-                                        : NabangColors.danger,
-                              ),
+                                        : tx.type == 'income'
+                                            ? NabangColors.success
+                                            : NabangColors.danger,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        tx.description?.isNotEmpty == true
+                                            ? tx.description!
+                                            : (tx.categoryName ?? (tx.type == 'transfer' ? 'Transfer Antar Akun' : 'Transaksi')),
+                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        CurrencyFormatter.formatDate(tx.occurredAt),
+                                        style: const TextStyle(fontSize: 11, color: NabangColors.textSecondary),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Text(
+                                  '${tx.type == 'income' ? '+' : tx.type == 'transfer' ? '' : '-'}${CurrencyFormatter.formatRupiah(tx.amount)}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                    color: tx.type == 'income'
+                                        ? NabangColors.success
+                                        : tx.type == 'transfer'
+                                            ? Colors.blue
+                                            : NabangColors.danger,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      );
-                    },
+                    ],
                   ),
                 const SizedBox(height: 20),
               ],
