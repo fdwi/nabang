@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/colors.dart';
+import '../../core/formatters/currency_formatter.dart';
 import '../../models/account_model.dart';
 import '../../models/category_model.dart';
 import '../../services/supabase_service.dart';
@@ -268,6 +269,38 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                 filled: true,
                 fillColor: NabangColors.background,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Date Picker
+            InkWell(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedDate,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (picked != null) setState(() => _selectedDate = picked);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                decoration: BoxDecoration(
+                  color: NabangColors.background,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: NabangColors.border),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Tanggal: ${CurrencyFormatter.formatDate(_selectedDate)}',
+                      style: const TextStyle(fontSize: 14, color: NabangColors.textPrimary),
+                    ),
+                    const Icon(Icons.calendar_today, size: 18, color: NabangColors.textSecondary),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24),

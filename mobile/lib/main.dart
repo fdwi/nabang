@@ -20,6 +20,7 @@ Future<void> main() async {
   // Inisialisasi Supabase Backend
   await Supabase.initialize(
     url: SupabaseConfig.supabaseUrl,
+    // ignore: deprecated_member_use
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
 

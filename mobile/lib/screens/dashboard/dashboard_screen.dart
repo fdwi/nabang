@@ -9,10 +9,12 @@ import '../transactions/add_transaction_sheet.dart';
 
 class DashboardScreen extends StatefulWidget {
   final Function(int) onNavigateTab;
+  final VoidCallback? onLogout;
 
   const DashboardScreen({
     super.key,
     required this.onNavigateTab,
+    this.onLogout,
   });
 
   @override
@@ -129,10 +131,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.refresh, color: NabangColors.textSecondary),
-                      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                      onPressed: _loadData,
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.refresh, color: NabangColors.textSecondary),
+                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                          onPressed: _loadData,
+                        ),
+                        if (widget.onLogout != null)
+                          IconButton(
+                            icon: const Icon(Icons.logout, color: NabangColors.textSecondary),
+                            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                            onPressed: widget.onLogout,
+                          ),
+                      ],
                     ),
                   ],
                 ),

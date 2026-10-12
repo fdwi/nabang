@@ -57,7 +57,10 @@ class _MainNavScreenState extends State<MainNavScreen> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      DashboardScreen(onNavigateTab: _onTabTapped),
+      DashboardScreen(
+        onNavigateTab: _onTabTapped,
+        onLogout: _logout,
+      ),
       const TransactionsScreen(),
       const AccountsScreen(),
       const GoalsScreen(),
