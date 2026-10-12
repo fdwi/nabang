@@ -170,7 +170,7 @@ export function DashboardView({
 
         <div className="flex items-center gap-2 self-start rounded-full border border-pink-200 bg-pink-50/80 px-3 py-1.5 text-xs font-medium text-pink-900 backdrop-blur-xs sm:self-auto dark:border-pink-900/50 dark:bg-pink-950/40 dark:text-pink-200">
           <Sparkles className="size-3.5 text-pink-600 dark:text-pink-300" />
-          <span>DwiSave Platinum Priority</span>
+          <span>Nabang Platinum Priority</span>
         </div>
       </div>
 
@@ -190,7 +190,7 @@ export function DashboardView({
               </div>
               <div>
                 <p className="text-xs font-semibold tracking-wider text-pink-200 uppercase">
-                  DwiSave
+                  Nabang
                 </p>
                 <p className="text-[11px] font-medium text-pink-100/90">
                   Virtual Platinum
@@ -280,7 +280,7 @@ export function DashboardView({
             {/* Gambar Ilustrasi 3D Pink Bank Mandiri Style */}
             <div className="relative mx-auto size-40 shrink-0 overflow-hidden rounded-2xl border border-pink-300/40 shadow-md sm:mx-0 sm:size-44 dark:border-pink-800/40">
               <Image
-                alt="Ilustrasi Tabungan 3D DwiSave Versi Pink"
+                alt="Ilustrasi Tabungan 3D Nabang Versi Pink"
                 className="object-cover transition-transform duration-300 hover:scale-105"
                 fill
                 priority

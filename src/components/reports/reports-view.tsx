@@ -167,7 +167,7 @@ export function ReportsView({
     const csvContent =
       "data:text/csv;charset=utf-8," +
       [
-        `"Laporan Keuangan DwiSave - Periode ${period}"`,
+        `"Laporan Keuangan Nabang - Periode ${period}"`,
         `"Total Pemasukan","${totalIncome}"`,
         `"Total Pengeluaran","${totalExpense}"`,
         `"Arus Kas Bersih","${netCashFlow}"`,
@@ -181,7 +181,7 @@ export function ReportsView({
     link.setAttribute("href", encodedUri);
     link.setAttribute(
       "download",
-      `laporan-dwisave-${period}-${new Date().toISOString().split("T")[0]}.csv`
+      `laporan-nabang-${period}-${new Date().toISOString().split("T")[0]}.csv`
     );
     document.body.appendChild(link);
     link.click();

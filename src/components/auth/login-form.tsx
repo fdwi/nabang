@@ -31,16 +31,16 @@ export function LoginForm({ configured }: { configured: boolean }) {
         <header className="relative z-10 flex items-center justify-center px-4 pt-6 pb-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-pink-200 bg-pink-50/90 px-3.5 py-1.5 text-xs font-medium text-pink-900 shadow-xs">
             <Sparkles className="size-3.5 text-pink-600" />
-            <span>DwiSave Platinum Priority</span>
+            <span>Nabang Platinum Priority</span>
           </div>
         </header>
 
-        {/* Area Tengah: Visual Splash 3D Pink & Logo Livin' */}
+        {/* Area Tengah: Visual Splash 3D Pink & Logo Nabang */}
         <div className="relative my-auto flex flex-col items-center justify-center px-4 py-3">
-          {/* Ilustrasi Liquid Splash 3D Livin' Pink */}
+          {/* Ilustrasi Liquid Splash 3D Pink */}
           <div className="relative flex size-64 items-center justify-center sm:size-72">
             <Image
-              alt="Livin Pink Liquid Splash 3D"
+              alt="Liquid Splash 3D Pink"
               className="size-full object-contain drop-shadow-xl"
               height={288}
               priority
@@ -49,16 +49,19 @@ export function LoginForm({ configured }: { configured: boolean }) {
               width={288}
             />
 
-            {/* Logo DS (DwiSave) di Tengah Splash */}
+            {/* Logo Resmi Nabang di Tengah Splash */}
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-              <div className="flex size-20 items-center justify-center rounded-3xl border-2 border-white/40 bg-gradient-to-tr from-[#881337] via-[#be123c] to-[#f43f5e] shadow-2xl shadow-rose-950/50 backdrop-blur-xs">
-                <span className="text-3xl font-black tracking-tight text-white drop-shadow-sm">
-                  DS
-                </span>
+              <div className="flex size-24 items-center justify-center rounded-3xl border-2 border-white/60 bg-white/95 p-2.5 shadow-2xl shadow-rose-950/30 backdrop-blur-md">
+                <Image
+                  alt="Logo Nabang"
+                  className="size-full object-contain"
+                  height={96}
+                  priority
+                  src="/images/logonabang.png"
+                  unoptimized
+                  width={96}
+                />
               </div>
-              <span className="mt-2 text-sm font-extrabold tracking-wider text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                DwiSave
-              </span>
             </div>
           </div>
         </div>
@@ -67,10 +70,10 @@ export function LoginForm({ configured }: { configured: boolean }) {
         <div className="relative z-10 rounded-t-[32px] border-t border-rose-100/80 bg-white px-6 pt-5 pb-8 shadow-[0_-10px_30px_rgba(0,0,0,0.06)]">
           <div className="mb-4 text-center">
             <h2 className="text-lg font-bold text-slate-900">
-              Masuk ke DwiSave
+              Masuk ke Nabang
             </h2>
             <p className="mt-0.5 text-xs text-rose-600 font-medium">
-              Tabungan & Keuangan Pribadi
+              Aplikasi Tabungan & Keuangan Pribadi
             </p>
           </div>
 
@@ -162,7 +165,7 @@ export function LoginForm({ configured }: { configured: boolean }) {
                 type="submit"
               >
                 <Fingerprint className="size-5 stroke-[2.2]" />
-                <span>{pending ? "Memeriksa Kredensial..." : "Masuk ke DwiSave"}</span>
+                <span>{pending ? "Memeriksa Kredensial..." : "Masuk ke Nabang"}</span>
               </Button>
             </div>
 
@@ -191,13 +194,13 @@ export function LoginForm({ configured }: { configured: boolean }) {
                 <BrandLogo className="text-[#fb7185]" />
                 <span className="rounded-full border border-pink-400/30 bg-pink-500/10 px-3 py-1 text-xs font-semibold text-pink-300">
                   <Sparkles className="mr-1 inline-block size-3.5" />
-                  DwiSave Web Portal
+                  Nabang Web Portal
                 </span>
               </div>
 
               <div className="mt-10 space-y-4">
                 <h1 className="text-4xl font-extrabold tracking-tight text-white xl:text-5xl">
-                  Portal Tabungan & Keuangan Digital DwiSave
+                  Portal Tabungan & Keuangan Digital Nabang
                 </h1>
                 <p className="max-w-xl text-base leading-relaxed text-pink-100/75">
                   Akses instan untuk mencatat arus kas, mengatur anggaran belanja, dan mencapai target finansial Anda secara aman.
@@ -208,7 +211,7 @@ export function LoginForm({ configured }: { configured: boolean }) {
             {/* Visual Hero 3D Pink Edition */}
             <div className="relative my-8 h-72 w-full overflow-hidden rounded-2xl border border-white/15 shadow-2xl">
               <Image
-                alt="DwiSave Hero Desktop"
+                alt="Nabang Hero Desktop"
                 className="object-cover"
                 fill
                 priority
@@ -217,7 +220,7 @@ export function LoginForm({ configured }: { configured: boolean }) {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs text-white/90">
-                <span className="font-semibold">DwiSave Finance Platform</span>
+                <span className="font-semibold">Nabang Finance Platform</span>
                 <span className="text-pink-300">Platinum Priority</span>
               </div>
             </div>
@@ -321,13 +324,13 @@ export function LoginForm({ configured }: { configured: boolean }) {
                   disabled={!configured || pending}
                   type="submit"
                 >
-                  {pending ? "Memeriksa Kredensial..." : "Masuk ke DwiSave"}
+                  {pending ? "Memeriksa Kredensial..." : "Masuk ke Nabang"}
                 </Button>
               </div>
             </form>
 
             <div className="mt-8 border-t border-white/10 pt-5 text-center text-xs text-white/45">
-              <p>DwiSave Mandiri &middot; Pengelolaan Keuangan & Tabungan</p>
+              <p>Nabang &middot; Aplikasi Pengelolaan Tabungan & Keuangan Pribadi</p>
             </div>
           </div>
         </div>

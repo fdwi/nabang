@@ -12,8 +12,8 @@ const fontSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "DwiSave",
-  description: "Aplikasi tabungan dan keuangan pribadi.",
+  title: "Nabang",
+  description: "Nabang - Aplikasi tabungan dan keuangan pribadi.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
