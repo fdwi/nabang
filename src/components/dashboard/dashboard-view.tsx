@@ -199,7 +199,7 @@ export function DashboardView({
             captionText={showBalance ? formatRupiah(totalBalance) : "Rp ••••••••••"}
             displayOverlayContent={true}
             overlayContent={
-              <div className="flex h-full w-full flex-col items-center justify-center pointer-events-none">
+              <div className="flex h-full w-full flex-col items-start justify-center px-6 sm:px-7 pointer-events-none">
                 <div className="tilted-card-demo-text">
                   <span>{showBalance ? formatRupiah(totalBalance) : "Rp ••••••••••"}</span>
                   <button
