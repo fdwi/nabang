@@ -1,5 +1,6 @@
 import { AccountsView } from "@/components/accounts/accounts-view";
 import { AppShell } from "@/components/layout/app-shell";
+import Shuffle from "@/components/ui/shuffle";
 import {
   calculateAccountBalance,
   calculateTotalBalance,
@@ -68,9 +69,21 @@ export default async function AccountsPage() {
         <div className="mb-6 flex size-12 items-center justify-center rounded-xl bg-[#f9e1e1] text-[#8f3242] dark:bg-[#542d35] dark:text-[#ffc4cb]">
           <WalletCards aria-hidden="true" size={24} />
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Akun & Saldo
-        </h1>
+        <Shuffle
+          text="Akun & Saldo"
+          tag="h1"
+          className="text-3xl font-semibold tracking-tight sm:text-4xl"
+          textAlign="left"
+          shuffleDirection="right"
+          duration={0.35}
+          animationMode="evenodd"
+          shuffleTimes={1}
+          ease="power3.out"
+          stagger={0.03}
+          threshold={0.1}
+          triggerOnce={true}
+          triggerOnHover={true}
+        />
         <p className="mt-3 max-w-xl text-base leading-7 text-muted-foreground">
           Kelola akun tunai, rekening bank, e-wallet, dan pantau saldo berjalan yang dihitung dari riwayat mutasi transaksi.
         </p>

@@ -25,6 +25,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import Shuffle from "@/components/ui/shuffle";
 
 type Account = Database["public"]["Tables"]["accounts"]["Row"] & {
   currentBalance: number;
@@ -159,9 +160,22 @@ export function DashboardView({
           <span className="text-xs font-semibold tracking-wider text-[#b34455] uppercase dark:text-[#ffb9c3]">
             {greeting},
           </span>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-            {displayName}
-          </h1>
+          <Shuffle
+            text={displayName}
+            tag="h1"
+            className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl"
+            textAlign="left"
+            shuffleDirection="right"
+            duration={0.35}
+            animationMode="evenodd"
+            shuffleTimes={1}
+            ease="power3.out"
+            stagger={0.03}
+            threshold={0.1}
+            triggerOnce={true}
+            triggerOnHover={true}
+            respectReducedMotion={true}
+          />
           <p className="text-xs text-muted-foreground sm:text-sm">
             Pantau dan kelola keuangan harian Anda dengan mudah.
           </p>
