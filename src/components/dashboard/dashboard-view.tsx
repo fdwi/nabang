@@ -193,10 +193,26 @@ export function DashboardView({
             imageWidth="100%"
             imageHeight="100%"
             rotateAmplitude={12}
-            scaleOnHover={1.03}
+            scaleOnHover={1.04}
             showMobileWarning={false}
             showTooltip={true}
-            captionText={showBalance ? `Saldo: ${formatRupiah(totalBalance)}` : "Saldo: Disembunyikan"}
+            captionText={showBalance ? formatRupiah(totalBalance) : "Rp ••••••••••"}
+            displayOverlayContent={true}
+            overlayContent={
+              <div className="flex h-full w-full flex-col items-center justify-center pointer-events-none">
+                <div className="tilted-card-demo-text">
+                  <span>{showBalance ? formatRupiah(totalBalance) : "Rp ••••••••••"}</span>
+                  <button
+                    aria-label={showBalance ? "Sembunyikan nominal saldo" : "Tampilkan nominal saldo"}
+                    className="inline-flex size-7 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/20 hover:text-white pointer-events-auto"
+                    onClick={() => setShowBalance(!showBalance)}
+                    type="button"
+                  >
+                    {showBalance ? <Eye size={16} /> : <EyeOff size={16} />}
+                  </button>
+                </div>
+              </div>
+            }
           >
             <div className="relative h-full overflow-hidden rounded-3xl bg-gradient-to-tr from-[#7a0c2e] via-[#be123c] to-[#fb7185] p-6 text-white shadow-xl shadow-rose-950/15 sm:p-7">
               {/* Efek Garis & Lingkaran Geometris Halus */}
@@ -225,27 +241,12 @@ export function DashboardView({
                 </div>
               </div>
 
-              {/* Baris Tengah: Saldo & Tombol Sembunyikan/Tampilkan Mata */}
-              <div className="relative mt-7">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-pink-200">
-                    Total Saldo Rekening
-                  </span>
-                  <button
-                    aria-label={showBalance ? "Sembunyikan nominal saldo" : "Tampilkan nominal saldo"}
-                    className="inline-flex size-7 items-center justify-center rounded-full text-pink-200 transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-2 focus-visible:outline-white"
-                    onClick={() => setShowBalance(!showBalance)}
-                    type="button"
-                  >
-                    {showBalance ? <Eye size={15} /> : <EyeOff size={15} />}
-                  </button>
-                </div>
-
-                <div className="mt-1 flex items-baseline">
-                  <span className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-                    {showBalance ? formatRupiah(totalBalance) : "Rp ••••••••••"}
-                  </span>
-                </div>
+              {/* Baris Tengah: Label Saldo Rekening (Nominal melayang di overlay 3D) */}
+              <div className="relative mt-5 mb-8">
+                <span className="text-xs font-medium text-pink-200">
+                  Total Saldo Rekening
+                </span>
+                <div className="h-10 w-full" />
               </div>
 
               {/* Baris Bawah: Nomor Kartu & Nama Pemilik */}

@@ -53,33 +53,44 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 10;
+  z-index: 20;
   will-change: transform;
   transform: translateZ(30px);
 }
 
+/* Floating overlay pill as seen in React Bits Kendrick Lamar demo */
+.tilted-card-demo-text {
+  background-color: rgba(30, 30, 30, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.35rem;
+  padding: 12px 26px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  letter-spacing: -0.02em;
+  pointer-events: auto;
+}
+
+/* Floating tooltip caption that follows cursor, styled exactly as the demo */
 .tilted-card-caption {
   pointer-events: none;
   position: absolute;
   left: 0;
   top: 0;
-  border-radius: 9999px;
-  background-color: rgba(17, 24, 39, 0.9);
-  backdrop-filter: blur(8px);
-  padding: 6px 14px;
-  font-size: 12px;
+  border-radius: 4px;
+  background-color: #ffffff;
+  padding: 4px 10px;
+  font-size: 11px;
   font-weight: 600;
-  color: #ffffff;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #2d2d2d;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.18);
   opacity: 0;
   z-index: 50;
   white-space: nowrap;
-  transform: translate(-50%, -120%);
-}
-
-.dark .tilted-card-caption {
-  background-color: rgba(255, 255, 255, 0.92);
-  color: #881337;
-  border: 1px solid rgba(0, 0, 0, 0.1);
 }
