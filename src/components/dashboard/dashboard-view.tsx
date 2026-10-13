@@ -26,6 +26,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import Shuffle from "@/components/ui/shuffle";
+import TiltedCard from "@/components/ui/tilted-card";
 
 type Account = Database["public"]["Tables"]["accounts"]["Row"] & {
   currentBalance: number;
@@ -184,73 +185,87 @@ export function DashboardView({
 
       {/* Hero Section: Kartu Virtual ala Livin' Mandiri Versi Pink & Banner Bergambar */}
       <div className="grid gap-6 lg:grid-cols-12">
-        {/* Kartu Virtual Platinum Pink */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-tr from-[#7a0c2e] via-[#be123c] to-[#fb7185] p-6 text-white shadow-xl shadow-rose-950/15 sm:p-7 lg:col-span-6 xl:col-span-5">
-          {/* Efek Garis & Lingkaran Geometris Halus */}
-          <div className="pointer-events-none absolute -top-12 -right-12 size-48 rounded-full bg-white/10 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-16 -left-16 size-56 rounded-full bg-pink-300/10 blur-2xl" />
+        {/* Kartu Virtual Platinum Pink dengan Efek 3D Tilted Card */}
+        <div className="lg:col-span-6 xl:col-span-5">
+          <TiltedCard
+            containerWidth="100%"
+            containerHeight="100%"
+            imageWidth="100%"
+            imageHeight="100%"
+            rotateAmplitude={12}
+            scaleOnHover={1.03}
+            showMobileWarning={false}
+            showTooltip={true}
+            captionText={showBalance ? `Saldo: ${formatRupiah(totalBalance)}` : "Saldo: Disembunyikan"}
+          >
+            <div className="relative h-full overflow-hidden rounded-3xl bg-gradient-to-tr from-[#7a0c2e] via-[#be123c] to-[#fb7185] p-6 text-white shadow-xl shadow-rose-950/15 sm:p-7">
+              {/* Efek Garis & Lingkaran Geometris Halus */}
+              <div className="pointer-events-none absolute -top-12 -right-12 size-48 rounded-full bg-white/10 blur-2xl" />
+              <div className="pointer-events-none absolute -bottom-16 -left-16 size-56 rounded-full bg-pink-300/10 blur-2xl" />
 
-          {/* Baris Atas Kartu: Logo Brand & Chip Pintar */}
-          <div className="relative flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md">
-                <CreditCard className="size-5 text-pink-100" />
+              {/* Baris Atas Kartu: Logo Brand & Chip Pintar */}
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md">
+                    <CreditCard className="size-5 text-pink-100" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold tracking-wider text-pink-200 uppercase">
+                      Nabang
+                    </p>
+                    <p className="text-[11px] font-medium text-pink-100/90">
+                      Virtual Platinum
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 text-pink-100/90">
+                  <Wifi aria-hidden="true" className="size-5 rotate-90" />
+                  <div className="h-6 w-9 rounded-md border border-amber-300/60 bg-gradient-to-tr from-amber-400/90 to-amber-200/90 shadow-xs" />
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-semibold tracking-wider text-pink-200 uppercase">
-                  Nabang
-                </p>
-                <p className="text-[11px] font-medium text-pink-100/90">
-                  Virtual Platinum
-                </p>
+
+              {/* Baris Tengah: Saldo & Tombol Sembunyikan/Tampilkan Mata */}
+              <div className="relative mt-7">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-pink-200">
+                    Total Saldo Rekening
+                  </span>
+                  <button
+                    aria-label={showBalance ? "Sembunyikan nominal saldo" : "Tampilkan nominal saldo"}
+                    className="inline-flex size-7 items-center justify-center rounded-full text-pink-200 transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-2 focus-visible:outline-white"
+                    onClick={() => setShowBalance(!showBalance)}
+                    type="button"
+                  >
+                    {showBalance ? <Eye size={15} /> : <EyeOff size={15} />}
+                  </button>
+                </div>
+
+                <div className="mt-1 flex items-baseline">
+                  <span className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+                    {showBalance ? formatRupiah(totalBalance) : "Rp ••••••••••"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Baris Bawah: Nomor Kartu & Nama Pemilik */}
+              <div className="relative mt-8 flex items-end justify-between border-t border-white/15 pt-4 text-xs">
+                <div>
+                  <p className="font-mono tracking-widest text-pink-200/90">
+                    5241 •••• •••• 8829
+                  </p>
+                  <p className="mt-1 font-semibold tracking-wide text-white uppercase">
+                    {displayName}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-[10px] text-pink-200 uppercase">Valid Thru</p>
+                  <p className="font-mono font-medium text-pink-100">10/29</p>
+                </div>
               </div>
             </div>
-
-            <div className="flex items-center gap-2.5 text-pink-100/90">
-              <Wifi aria-hidden="true" className="size-5 rotate-90" />
-              <div className="h-6 w-9 rounded-md border border-amber-300/60 bg-gradient-to-tr from-amber-400/90 to-amber-200/90 shadow-xs" />
-            </div>
-          </div>
-
-          {/* Baris Tengah: Saldo & Tombol Sembunyikan/Tampilkan Mata */}
-          <div className="relative mt-7">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-pink-200">
-                Total Saldo Rekening
-              </span>
-              <button
-                aria-label={showBalance ? "Sembunyikan nominal saldo" : "Tampilkan nominal saldo"}
-                className="inline-flex size-7 items-center justify-center rounded-full text-pink-200 transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-2 focus-visible:outline-white"
-                onClick={() => setShowBalance(!showBalance)}
-                type="button"
-              >
-                {showBalance ? <Eye size={15} /> : <EyeOff size={15} />}
-              </button>
-            </div>
-
-            <div className="mt-1 flex items-baseline">
-              <span className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-                {showBalance ? formatRupiah(totalBalance) : "Rp ••••••••••"}
-              </span>
-            </div>
-          </div>
-
-          {/* Baris Bawah: Nomor Kartu & Nama Pemilik */}
-          <div className="relative mt-8 flex items-end justify-between border-t border-white/15 pt-4 text-xs">
-            <div>
-              <p className="font-mono tracking-widest text-pink-200/90">
-                5241 •••• •••• 8829
-              </p>
-              <p className="mt-1 font-semibold tracking-wide text-white uppercase">
-                {displayName}
-              </p>
-            </div>
-
-            <div className="text-right">
-              <p className="text-[10px] text-pink-200 uppercase">Valid Thru</p>
-              <p className="font-mono font-medium text-pink-100">10/29</p>
-            </div>
-          </div>
+          </TiltedCard>
         </div>
 
         {/* Banner Ilustrasi Keuangan 3D Bergambar (Gaya Livin' Lifestyle Promo) */}
