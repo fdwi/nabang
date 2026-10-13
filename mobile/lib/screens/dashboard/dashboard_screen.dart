@@ -303,43 +303,61 @@ class DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Baris Tengah: Saldo & Tombol Mata
-                      Row(
-                        children: [
-                          Text(
-                            'Total Saldo Rekening',
-                            style: TextStyle(
-                              color: Colors.pink.shade100,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          InkWell(
-                            onTap: () => setState(() => _showBalance = !_showBalance),
-                            borderRadius: BorderRadius.circular(20),
-                            child: Padding(
-                              padding: const EdgeInsets.all(4.0),
-                              child: Icon(
-                                _showBalance ? Icons.visibility : Icons.visibility_off,
-                                color: Colors.pink.shade100,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
+                      // Baris Tengah: Label Saldo & Floating Pill Saldo ala Kendrick Lamar demo
                       Text(
-                        _showBalance ? CurrencyFormatter.formatRupiah(_totalBalance) : 'Rp ••••••••••',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
+                        'Total Saldo Rekening',
+                        style: TextStyle(
+                          color: Colors.pink.shade100,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.55),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: Colors.white.withOpacity(0.25), width: 1),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _showBalance ? CurrencyFormatter.formatRupiah(_totalBalance) : 'Rp ••••••••••',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              InkWell(
+                                onTap: () => setState(() => _showBalance = !_showBalance),
+                                borderRadius: BorderRadius.circular(20),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: Icon(
+                                    _showBalance ? Icons.visibility : Icons.visibility_off,
+                                    color: Colors.white70,
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
                       // Baris Bawah: Nomor Kartu & Nama Pemilik
                       Row(

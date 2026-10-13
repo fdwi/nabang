@@ -22,9 +22,6 @@
   .tilted-card-mobile-alert {
     display: none;
   }
-  .tilted-card-caption {
-    display: none;
-  }
 }
 
 .tilted-card-inner {
@@ -60,21 +57,30 @@
 
 /* Floating overlay pill as seen in React Bits Kendrick Lamar demo */
 .tilted-card-demo-text {
-  background-color: rgba(30, 30, 30, 0.65);
+  background-color: rgba(30, 30, 30, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: #ffffff;
   font-weight: 800;
-  font-size: 1.35rem;
-  padding: 12px 26px;
-  border-radius: 20px;
+  font-size: 1.1rem;
+  padding: 10px 18px;
+  border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   letter-spacing: -0.02em;
   pointer-events: auto;
+  max-width: 90%;
+}
+
+@media (min-width: 640px) {
+  .tilted-card-demo-text {
+    font-size: 1.35rem;
+    padding: 12px 26px;
+    gap: 10px;
+  }
 }
 
 /* Floating tooltip caption that follows cursor, styled exactly as the demo */
