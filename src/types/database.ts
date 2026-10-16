@@ -13,9 +13,58 @@ export type AccountType = "cash" | "bank" | "ewallet" | "other";
 export type ContributionType = "deposit" | "withdrawal";
 export type ReminderFrequency = "daily" | "weekly" | "monthly";
 
+export interface WarungItem {
+  id: string;
+  name: string;
+  qty: number;
+  price: number;
+  subtotal: number;
+}
+
+export type WarungOrder = Database["public"]["Tables"]["warung_orders"]["Row"];
+
 export interface Database {
   public: {
     Tables: {
+      warung_orders: {
+        Row: {
+          id: string;
+          user_id: string;
+          warung_name: string;
+          items: WarungItem[];
+          total_amount: number;
+          is_paid: boolean;
+          ordered_at: string;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          warung_name: string;
+          items?: WarungItem[];
+          total_amount?: number;
+          is_paid?: boolean;
+          ordered_at?: string;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          warung_name?: string;
+          items?: WarungItem[];
+          total_amount?: number;
+          is_paid?: boolean;
+          ordered_at?: string;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;

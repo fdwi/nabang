@@ -9,6 +9,7 @@ import {
   ReceiptText,
   Settings,
   Target,
+  UtensilsCrossed,
   WalletCards,
 } from "lucide-react";
 import Link from "next/link";
@@ -17,6 +18,7 @@ import { usePathname } from "next/navigation";
 const navigation = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transaksi", label: "Transaksi", icon: ReceiptText },
+  { href: "/warung", label: "Catatan Warung", icon: UtensilsCrossed },
   { href: "/akun", label: "Akun & Saldo", icon: WalletCards },
   { href: "/target", label: "Target Tabungan", icon: Target },
   { href: "/anggaran", label: "Anggaran", icon: PiggyBank },
@@ -93,7 +95,13 @@ export function AppNavigation() {
                 />
               </div>
               <span className="leading-none">
-                {label === "Target Tabungan" ? "Target" : label === "Akun & Saldo" ? "Akun" : label}
+                {label === "Target Tabungan"
+                  ? "Target"
+                  : label === "Akun & Saldo"
+                  ? "Akun"
+                  : label === "Catatan Warung"
+                  ? "Warung"
+                  : label}
               </span>
             </Link>
           );

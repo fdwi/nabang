@@ -19,6 +19,7 @@ import {
   Plus,
   Scale,
   Target,
+  UtensilsCrossed,
   Wallet,
   Wifi,
 } from "lucide-react";
@@ -293,6 +294,13 @@ export function DashboardView({
                 >
                   <PieChart className="mr-1.5 size-4" />
                   Cek Anggaran
+                </Link>
+                <Link
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-pink-300/60 bg-pink-50/70 px-4 text-xs font-semibold text-[#8f3242] transition-colors hover:bg-pink-100/80 focus-visible:outline-2 focus-visible:outline-[#b34455] dark:border-pink-900/50 dark:bg-pink-950/40 dark:text-[#ffc4cb]"
+                  href="/warung"
+                >
+                  <UtensilsCrossed className="mr-1.5 size-4" />
+                  Catatan Warung
                 </Link>
               </div>
             </div>
