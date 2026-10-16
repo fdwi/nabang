@@ -4,7 +4,7 @@ import { createWarungOrder, updateWarungOrder } from "@/actions/warung";
 import { Button } from "@/components/ui/button";
 import { formatRupiah } from "@/lib/formatters/currency";
 import type { WarungItem, WarungOrder } from "@/types/database";
-import { CheckCircle2, Clock, Plus, Trash2, UtensilsCrossed, X } from "lucide-react";
+import { CheckCircle2, Clock, Minus, Plus, Trash2, UtensilsCrossed, X } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 
 type WarungFormModalProps = {
@@ -100,12 +100,22 @@ export function WarungFormModal({
       if (field === "name") {
         current.name = String(value);
       } else if (field === "qty") {
-        current.qty = Math.max(1, Number(value) || 1);
+        if (value === "") {
+          current.qty = "" as unknown as number;
+        } else {
+          current.qty = Math.max(0, Number(value) || 0);
+        }
       } else if (field === "price") {
-        current.price = Math.max(0, Number(value) || 0);
+        if (value === "") {
+          current.price = "" as unknown as number;
+        } else {
+          current.price = Math.max(0, Number(value) || 0);
+        }
       }
 
-      current.subtotal = current.qty * current.price;
+      const numQty = Number(current.qty) || 0;
+      const numPrice = Number(current.price) || 0;
+      current.subtotal = numQty * numPrice;
       updated[index] = current;
       return updated;
     });
@@ -422,34 +432,62 @@ export function WarungFormModal({
                       />
                     </div>
 
-                    {/* Qty & Harga */}
+                    {/* Qty & Stepper Controls */}
                     <div className="flex items-center gap-2">
-                      <div className="w-20">
-                        <div className="relative">
-                          <input
-                            className="w-full rounded-lg border border-input bg-card px-2 py-1.5 text-center text-sm text-foreground focus:border-[#b34455] focus:outline-none dark:focus:border-[#ffb9c3]"
-                            min={1}
-                            onChange={(e) => updateItem(index, "qty", e.target.value)}
-                            placeholder="Qty"
-                            required
-                            type="number"
-                            value={item.qty || ""}
-                          />
-                        </div>
+                      <div className="flex items-center rounded-lg border border-input bg-card shadow-xs">
+                        <button
+                          aria-label="Kurangi jumlah"
+                          className="inline-flex size-8 items-center justify-center rounded-l-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none"
+                          onClick={() => {
+                            const currentQty = Number(item.qty) || 1;
+                            updateItem(index, "qty", Math.max(1, currentQty - 1));
+                          }}
+                          type="button"
+                        >
+                          <Minus size={13} />
+                        </button>
+                        <input
+                          className="w-11 bg-transparent py-1.5 text-center text-sm font-semibold text-foreground focus:outline-none"
+                          min={1}
+                          onBlur={(e) => {
+                            if (!e.target.value || Number(e.target.value) < 1) {
+                              updateItem(index, "qty", 1);
+                            }
+                          }}
+                          onChange={(e) => updateItem(index, "qty", e.target.value)}
+                          placeholder="1"
+                          type="number"
+                          value={item.qty === 0 ? "" : item.qty}
+                        />
+                        <button
+                          aria-label="Tambah jumlah"
+                          className="inline-flex size-8 items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none"
+                          onClick={() => {
+                            const currentQty = Number(item.qty) || 0;
+                            updateItem(index, "qty", currentQty + 1);
+                          }}
+                          type="button"
+                        >
+                          <Plus size={13} />
+                        </button>
                       </div>
 
-                      <span className="text-xs text-muted-foreground">x</span>
+                      <span className="text-xs text-muted-foreground font-medium">x</span>
 
                       <div className="w-28 sm:w-32">
                         <input
                           className="w-full rounded-lg border border-input bg-card px-2.5 py-1.5 text-sm text-foreground focus:border-[#b34455] focus:outline-none dark:focus:border-[#ffb9c3]"
                           min={0}
+                          onBlur={(e) => {
+                            if (e.target.value === "") {
+                              updateItem(index, "price", 0);
+                            }
+                          }}
                           onChange={(e) => updateItem(index, "price", e.target.value)}
                           placeholder="Harga (Rp)"
-                          required
                           step={500}
                           type="number"
-                          value={item.price || ""}
+                          value={item.price === 0 && !item.name ? "" : item.price}
                         />
                       </div>
 
