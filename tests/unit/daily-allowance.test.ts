@@ -73,3 +73,29 @@ test("calculateDailyAllowance: status over jika belanja hari ini melebihi jatah 
   assert.equal(result.status, "over");
   assert.equal(result.percentageUsed, 100);
 });
+
+test("calculateDailyAllowance: mendukung mode nominal tetap kustom harian", () => {
+  const currentDate = new Date(2026, 9, 18);
+  const transactions = [
+    {
+      amount: 25000,
+      type: "expense" as const,
+      occurred_at: new Date(2026, 9, 18, 10, 0).toISOString(),
+    },
+  ];
+
+  // User menetapkan nominal manual Rp 60.000 / hari
+  const result = calculateDailyAllowance({
+    transactions,
+    totalBalance: 2000000,
+    customDailyAmount: 60000,
+    currentDate,
+  });
+
+  assert.equal(result.dailyAllowance, 60000);
+  assert.equal(result.todayExpense, 25000);
+  assert.equal(result.remainingToday, 35000);
+  assert.equal(result.status, "safe");
+  assert.equal(result.percentageUsed, 42);
+});
+

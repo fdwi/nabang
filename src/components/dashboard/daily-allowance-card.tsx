@@ -30,10 +30,12 @@ type DailyAllowanceCardProps = {
   monthlyBudget?: number | null;
   showBalance?: boolean;
   onOpenExpenseModal?: () => void;
+  onHide?: () => void;
 };
 
 const PAYDAY_STORAGE_KEY = "nabang_payday_day";
 const MODE_STORAGE_KEY = "nabang_allowance_mode";
+const CUSTOM_AMOUNT_STORAGE_KEY = "nabang_allowance_custom_amount";
 
 export function DailyAllowanceCard({
   transactions,
@@ -41,9 +43,13 @@ export function DailyAllowanceCard({
   monthlyBudget = null,
   showBalance = true,
   onOpenExpenseModal,
+  onHide,
 }: DailyAllowanceCardProps) {
   const [paydayDay, setPaydayDay] = useState<number>(1);
-  const [mode, setMode] = useState<"balance" | "budget">("balance");
+  const [mode, setMode] = useState<"balance" | "budget" | "custom">("balance");
+  const [customAmount, setCustomAmount] = useState<number>(50000);
+  const [tempCustomAmount, setTempCustomAmount] = useState<string>("50000");
+  const [tempMode, setTempMode] = useState<"balance" | "budget" | "custom">("balance");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Load preferences dari localStorage
@@ -58,22 +64,39 @@ export function DailyAllowanceCard({
       }
 
       const savedMode = localStorage.getItem(MODE_STORAGE_KEY);
-      if (savedMode === "budget" || savedMode === "balance") {
+      if (savedMode === "budget" || savedMode === "balance" || savedMode === "custom") {
         setMode(savedMode);
+        setTempMode(savedMode);
       } else if (monthlyBudget && monthlyBudget > 0) {
         setMode("budget");
+        setTempMode("budget");
+      }
+
+      const savedCustom = localStorage.getItem(CUSTOM_AMOUNT_STORAGE_KEY);
+      if (savedCustom) {
+        const parsedCustom = Number(savedCustom);
+        if (!isNaN(parsedCustom) && parsedCustom > 0) {
+          setCustomAmount(parsedCustom);
+          setTempCustomAmount(String(parsedCustom));
+        }
       }
     } catch {
       /* noop */
     }
   }, [monthlyBudget]);
 
-  const saveSettings = (newPayday: number, newMode: "balance" | "budget") => {
+  const saveSettings = (
+    newPayday: number,
+    newMode: "balance" | "budget" | "custom",
+    newCustomAmount: number
+  ) => {
     setPaydayDay(newPayday);
     setMode(newMode);
+    setCustomAmount(newCustomAmount);
     try {
       localStorage.setItem(PAYDAY_STORAGE_KEY, String(newPayday));
       localStorage.setItem(MODE_STORAGE_KEY, newMode);
+      localStorage.setItem(CUSTOM_AMOUNT_STORAGE_KEY, String(newCustomAmount));
     } catch {
       /* noop */
     }
@@ -86,10 +109,11 @@ export function DailyAllowanceCard({
       transactions,
       totalBalance,
       monthlyBudget: mode === "budget" ? monthlyBudget : null,
+      customDailyAmount: mode === "custom" ? customAmount : null,
       paydayDay,
       currentDate: new Date(),
     });
-  }, [transactions, totalBalance, monthlyBudget, mode, paydayDay]);
+  }, [transactions, totalBalance, monthlyBudget, mode, customAmount, paydayDay]);
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-pink-200/80 bg-gradient-to-br from-card via-card to-pink-50/40 p-6 shadow-sm transition-all sm:p-7 dark:border-pink-900/40 dark:to-pink-950/20">
@@ -123,21 +147,41 @@ export function DailyAllowanceCard({
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Hitungan aman agar uangmu tidak habis sebelum akhir bulan.
+              {mode === "custom"
+                ? `Target nominal tetap: ${formatRupiah(customAmount)} / hari`
+                : "Hitungan aman agar uangmu tidak habis sebelum akhir bulan."}
             </p>
           </div>
         </div>
 
-        {/* Tombol Pengaturan Siklus */}
-        <button
-          aria-label="Pengaturan jatah jajan"
-          className="inline-flex items-center gap-1.5 self-start rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-[#b34455] sm:self-auto"
-          onClick={() => setIsSettingsOpen(true)}
-          type="button"
-        >
-          <Settings2 size={14} />
-          <span>Atur Siklus</span>
-        </button>
+        {/* Tombol Aksi: Atur & Sembunyikan */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            aria-label="Pengaturan jatah jajan"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-[#b34455]"
+            onClick={() => {
+              setTempMode(mode);
+              setTempCustomAmount(String(customAmount));
+              setIsSettingsOpen(true);
+            }}
+            type="button"
+          >
+            <Settings2 size={14} />
+            <span>Atur Jatah</span>
+          </button>
+
+          {onHide && (
+            <button
+              aria-label="Sembunyikan widget jatah jajan dari dashboard"
+              className="inline-flex size-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-2 focus-visible:outline-[#b34455] dark:hover:bg-rose-950/50 dark:hover:text-rose-400"
+              onClick={onHide}
+              title="Sembunyikan / Hapus widget ini dari dashboard"
+              type="button"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Bagian Utama: Nominal Sisa Jatah Hari Ini & Status */}
@@ -327,80 +371,160 @@ export function DailyAllowanceCard({
                 const form = e.currentTarget;
                 const fd = new FormData(form);
                 const payday = parseInt(fd.get("payday") as string, 10) || 1;
-                const chosenMode = (fd.get("mode") as "balance" | "budget") || "balance";
-                saveSettings(payday, chosenMode);
+                const chosenMode = (fd.get("mode") as "balance" | "budget" | "custom") || "balance";
+                const enteredAmount = parseInt(fd.get("custom_amount") as string, 10) || 50000;
+                saveSettings(payday, chosenMode, Math.max(1000, enteredAmount));
               }}
             >
               <div>
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Dasar Perhitungan Dana
+                  Cara Penentuan Jatah Jajan
                 </label>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Pilih sumber dana yang akan dibagi ke sisa hari:
+                  Pilih bagaimana nominal jatah jajan harian Anda dihitung:
                 </p>
-                <div className="mt-2 space-y-2">
-                  <label className="flex items-start gap-2.5 rounded-xl border border-border p-2.5 cursor-pointer hover:bg-muted/30">
+                <div className="mt-2.5 space-y-2">
+                  {/* Mode 1: Manual / Custom Nominal */}
+                  <label
+                    className={`flex items-start gap-2.5 rounded-xl border p-2.5 cursor-pointer transition-colors ${
+                      tempMode === "custom"
+                        ? "border-[#b34455] bg-pink-50/50 dark:border-pink-800 dark:bg-pink-950/30"
+                        : "border-border hover:bg-muted/30"
+                    }`}
+                  >
                     <input
-                      defaultChecked={mode === "balance"}
+                      checked={tempMode === "custom"}
+                      className="mt-0.5 size-4 text-[#b34455]"
                       name="mode"
+                      onChange={() => setTempMode("custom")}
+                      type="radio"
+                      value="custom"
+                    />
+                    <div className="flex-1">
+                      <span className="text-xs font-semibold text-foreground">
+                        Nominal Tetap Harian (Manual)
+                      </span>
+                      <p className="text-[11px] text-muted-foreground">
+                        Tentukan sendiri batas rupiah jajan harian Anda (misal: Rp 50.000 / hari).
+                      </p>
+                      {tempMode === "custom" && (
+                        <div className="mt-2.5">
+                          <label className="block text-[11px] font-semibold text-foreground">
+                            Nominal per Hari (Rp)
+                          </label>
+                          <input
+                            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-[#b34455]"
+                            min={1000}
+                            name="custom_amount"
+                            onChange={(e) => setTempCustomAmount(e.target.value)}
+                            placeholder="Contoh: 50000"
+                            step={1000}
+                            type="number"
+                            value={tempCustomAmount}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </label>
+
+                  {/* Mode 2: Otomatis dari Saldo */}
+                  <label
+                    className={`flex items-start gap-2.5 rounded-xl border p-2.5 cursor-pointer transition-colors ${
+                      tempMode === "balance"
+                        ? "border-[#b34455] bg-pink-50/50 dark:border-pink-800 dark:bg-pink-950/30"
+                        : "border-border hover:bg-muted/30"
+                    }`}
+                  >
+                    <input
+                      checked={tempMode === "balance"}
+                      className="mt-0.5 size-4 text-[#b34455]"
+                      name="mode"
+                      onChange={() => setTempMode("balance")}
                       type="radio"
                       value="balance"
-                      className="mt-0.5 size-4 text-[#b34455]"
                     />
                     <div>
                       <span className="text-xs font-semibold text-foreground">
-                        Total Saldo Akun Aktif
+                        Otomatis dari Sisa Saldo Rekening
                       </span>
                       <p className="text-[11px] text-muted-foreground">
-                        Jatah harian langsung dihitung dari sisa saldo semua rekening/dompet aktifmu.
+                        Total saldo semua rekening aktif dibagi dengan sisa hari sampai akhir bulan / gajian.
                       </p>
                     </div>
                   </label>
 
-                  <label className="flex items-start gap-2.5 rounded-xl border border-border p-2.5 cursor-pointer hover:bg-muted/30">
+                  {/* Mode 3: Otomatis dari Anggaran */}
+                  <label
+                    className={`flex items-start gap-2.5 rounded-xl border p-2.5 cursor-pointer transition-colors ${
+                      tempMode === "budget"
+                        ? "border-[#b34455] bg-pink-50/50 dark:border-pink-800 dark:bg-pink-950/30"
+                        : "border-border hover:bg-muted/30"
+                    }`}
+                  >
                     <input
-                      defaultChecked={mode === "budget"}
+                      checked={tempMode === "budget"}
+                      className="mt-0.5 size-4 text-[#b34455]"
                       name="mode"
+                      onChange={() => setTempMode("budget")}
                       type="radio"
                       value="budget"
-                      className="mt-0.5 size-4 text-[#b34455]"
                     />
                     <div>
                       <span className="text-xs font-semibold text-foreground">
-                        Anggaran Bulanan ({monthlyBudget ? formatRupiah(monthlyBudget) : "Belum diatur"})
+                        Otomatis dari Anggaran Bulanan ({monthlyBudget ? formatRupiah(monthlyBudget) : "Belum diatur"})
                       </span>
                       <p className="text-[11px] text-muted-foreground">
-                        Jatah dihitung dari sisa batas anggaran bulanan yang kamu tetapkan di menu Anggaran.
+                        Batas anggaran bulanan dibagi dengan sisa hari dalam siklus.
                       </p>
                     </div>
                   </label>
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Tanggal Reset Siklus / Gajian
-                </label>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Pilih tanggal berapa siklus keuanganmu di-reset (default: tanggal 1):
-                </p>
-                <select
-                  className="mt-1.5 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-medium text-foreground focus:border-[#b34455] focus:outline-none"
-                  defaultValue={paydayDay}
-                  name="payday"
-                >
-                  <option value={1}>Tanggal 1 (Awal Bulan Kalender)</option>
-                  <option value={25}>Tanggal 25 (Gajian Payroll)</option>
-                  <option value={28}>Tanggal 28 (Akhir Bulan Kerja)</option>
-                  {Array.from({ length: 31 }, (_, i) => i + 1)
-                    .filter((d) => ![1, 25, 28].includes(d))
-                    .map((d) => (
-                      <option key={d} value={d}>
-                        Tanggal {d}
-                      </option>
-                    ))}
-                </select>
-              </div>
+              {/* Tanggal Reset Gajian hanya relevan untuk mode otomatis */}
+              {tempMode !== "custom" && (
+                <div>
+                  <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                    Tanggal Reset Siklus / Gajian
+                  </label>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Pilih tanggal berapa siklus keuanganmu di-reset (default: tanggal 1):
+                  </p>
+                  <select
+                    className="mt-1.5 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-medium text-foreground focus:border-[#b34455] focus:outline-none"
+                    defaultValue={paydayDay}
+                    name="payday"
+                  >
+                    <option value={1}>Tanggal 1 (Awal Bulan Kalender)</option>
+                    <option value={25}>Tanggal 25 (Gajian Payroll)</option>
+                    <option value={28}>Tanggal 28 (Akhir Bulan Kerja)</option>
+                    {Array.from({ length: 31 }, (_, i) => i + 1)
+                      .filter((d) => ![1, 25, 28].includes(d))
+                      .map((d) => (
+                        <option key={d} value={d}>
+                          Tanggal {d}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Opsi Hapus / Sembunyikan Widget */}
+              {onHide && (
+                <div className="pt-2 border-t border-border">
+                  <button
+                    className="w-full text-left flex items-center justify-between text-xs text-rose-600 hover:text-rose-700 py-1.5 font-medium transition-colors"
+                    onClick={() => {
+                      setIsSettingsOpen(false);
+                      onHide();
+                    }}
+                    type="button"
+                  >
+                    <span>Sembunyikan / Hapus Widget dari Dashboard</span>
+                    <span className="text-[11px] underline">Sembunyikan</span>
+                  </button>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
                 <button

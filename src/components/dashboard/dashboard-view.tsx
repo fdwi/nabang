@@ -13,6 +13,7 @@ import {
   ArrowLeftRight,
   ArrowUpRight,
   BarChart3,
+  Coins,
   CreditCard,
   Eye,
   EyeOff,
@@ -59,13 +60,19 @@ export function DashboardView({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"income" | "expense" | "transfer">("expense");
   const [showBalance, setShowBalance] = useState(true);
+  const [showDailyAllowance, setShowDailyAllowance] = useState(true);
 
-  // Baca preferensi visibilitas saldo yang tersimpan di browser
+  // Baca preferensi visibilitas saldo & widget jatah jajan yang tersimpan di browser
   useEffect(() => {
     try {
       const saved = localStorage.getItem("nabang_show_balance");
       if (saved !== null) {
         setShowBalance(saved === "true");
+      }
+
+      const savedAllowance = localStorage.getItem("nabang_show_daily_allowance");
+      if (savedAllowance !== null) {
+        setShowDailyAllowance(savedAllowance === "true");
       }
     } catch {
       /* noop */
@@ -82,6 +89,24 @@ export function DashboardView({
       }
       return next;
     });
+  };
+
+  const handleHideAllowance = () => {
+    setShowDailyAllowance(false);
+    try {
+      localStorage.setItem("nabang_show_daily_allowance", "false");
+    } catch {
+      /* noop */
+    }
+  };
+
+  const handleRestoreAllowance = () => {
+    setShowDailyAllowance(true);
+    try {
+      localStorage.setItem("nabang_show_daily_allowance", "true");
+    } catch {
+      /* noop */
+    }
   };
 
   // Sapaan dinamis berdasarkan jam lokal
@@ -405,13 +430,32 @@ export function DashboardView({
       </div>
 
       {/* Widget Cerdas: Jatah Jajan Hari Ini (Safe-to-Spend) */}
-      <DailyAllowanceCard
-        monthlyBudget={monthlyBudget}
-        onOpenExpenseModal={() => openModal("expense")}
-        showBalance={showBalance}
-        totalBalance={totalBalance}
-        transactions={transactions}
-      />
+      {showDailyAllowance ? (
+        <DailyAllowanceCard
+          monthlyBudget={monthlyBudget}
+          onHide={handleHideAllowance}
+          onOpenExpenseModal={() => openModal("expense")}
+          showBalance={showBalance}
+          totalBalance={totalBalance}
+          transactions={transactions}
+        />
+      ) : (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl border border-dashed border-border bg-card/60 px-5 py-3.5 text-xs text-muted-foreground shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <Coins className="size-4 text-[#b34455] dark:text-[#ffb9c3]" />
+            <span>
+              Widget <strong>Jatah Jajan Hari Ini</strong> sedang disembunyikan.
+            </span>
+          </div>
+          <button
+            className="rounded-xl border border-border bg-background px-3 py-1.5 font-semibold text-[#b34455] hover:bg-muted focus-visible:outline-2 focus-visible:outline-[#b34455] dark:text-[#ffb9c3]"
+            onClick={handleRestoreAllowance}
+            type="button"
+          >
+            + Tampilkan Kembali Widget
+          </button>
+        </div>
+      )}
 
       {/* Menu Aksi Cepat Ikon Bulat ala Livin' by Mandiri */}
       <section aria-label="Menu Transaksi Cepat" className="rounded-2xl border border-border bg-card p-5 sm:p-6">

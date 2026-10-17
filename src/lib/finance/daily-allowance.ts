@@ -9,6 +9,7 @@ export type DailyAllowanceOptions = {
   transactions: Transaction[];
   totalBalance: number;
   monthlyBudget?: number | null; // Jika ada anggaran bulanan yang ditentukan
+  customDailyAmount?: number | null; // Jika pengguna menentukan nominal jatah tetap per hari
   paydayDay?: number; // Hari gajian / reset bulanan (default: 1)
   currentDate?: Date; // Untuk pengujian / override tanggal
 };
@@ -59,6 +60,7 @@ export function calculateDailyAllowance({
   transactions,
   totalBalance,
   monthlyBudget = null,
+  customDailyAmount = null,
   paydayDay = 1,
   currentDate = new Date(),
 }: DailyAllowanceOptions): DailyAllowanceResult {
@@ -82,10 +84,15 @@ export function calculateDailyAllowance({
   // 2. Hitung jumlah hari tersisa dalam siklus
   const daysRemaining = calculateDaysRemaining(currentDate, paydayDay);
 
-  // 3. Tentukan pool dana yang tersedia untuk dibagi
+  // 3. Tentukan pool dana yang tersedia dan jatah harian dasar
   let availablePool = 0;
+  let dailyAllowance = 0;
 
-  if (monthlyBudget && monthlyBudget > 0) {
+  if (customDailyAmount && customDailyAmount > 0) {
+    // Mode C: Nominal kustom yang ditentukan langsung oleh pengguna
+    dailyAllowance = Math.round(customDailyAmount);
+    availablePool = dailyAllowance * Math.max(1, daysRemaining);
+  } else if (monthlyBudget && monthlyBudget > 0) {
     // Mode A: Berdasarkan anggaran bulanan
     // Ambil semua pengeluaran bulan ini sebelum hari ini
     const priorExpensesThisMonth = transactions
@@ -100,18 +107,20 @@ export function calculateDailyAllowance({
       .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
 
     availablePool = Math.max(0, monthlyBudget - priorExpensesThisMonth);
+    dailyAllowance = Math.max(
+      0,
+      Math.floor(availablePool / Math.max(1, daysRemaining))
+    );
   } else {
     // Mode B: Berdasarkan total saldo akun aktif
     // Saldo sebelum pengeluaran hari ini terjadi
     const balanceBeforeToday = Math.max(0, totalBalance + todayExpense);
     availablePool = balanceBeforeToday;
+    dailyAllowance = Math.max(
+      0,
+      Math.floor(availablePool / Math.max(1, daysRemaining))
+    );
   }
-
-  // 4. Hitung jatah harian dasar
-  const dailyAllowance = Math.max(
-    0,
-    Math.floor(availablePool / Math.max(1, daysRemaining))
-  );
 
   // 5. Hitung sisa jatah hari ini
   const remainingToday = dailyAllowance - todayExpense;
