@@ -36,6 +36,8 @@ export const warungOrderSchema = z.object({
     .max(500, "Catatan maksimal 500 karakter.")
     .optional()
     .nullable(),
+  account_id: z.string().uuid("ID Akun tidak valid.").optional().nullable(),
+  auto_deduct: z.boolean().optional().default(false),
 });
 
 export type WarungItemInput = z.infer<typeof warungItemSchema>;

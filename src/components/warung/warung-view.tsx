@@ -5,6 +5,7 @@ import { WarungFormModal } from "@/components/warung/warung-form-modal";
 import { Button } from "@/components/ui/button";
 import { formatRupiah } from "@/lib/formatters/currency";
 import { calculateWarungSummary } from "@/lib/finance/warung";
+import type { WarungAccountOption } from "@/app/warung/page";
 import type { WarungOrder } from "@/types/database";
 import {
   AlertCircle,
@@ -17,6 +18,8 @@ import {
   Search,
   Store,
   Trash2,
+  Wallet,
+  X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -24,16 +27,26 @@ const LOCAL_STORAGE_KEY = "nabang_warung_orders";
 
 type WarungViewProps = {
   initialOrders: WarungOrder[];
+  accounts?: WarungAccountOption[];
   isConfigured?: boolean;
 };
 
-export function WarungView({ initialOrders, isConfigured = true }: WarungViewProps) {
+export function WarungView({
+  initialOrders,
+  accounts = [],
+  isConfigured = true,
+}: WarungViewProps) {
   const [orders, setOrders] = useState<WarungOrder[]>(initialOrders);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState<WarungOrder | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "unpaid" | "paid">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Dialog konfirmasi pelunasan dengan pilihan akun potong saldo
+  const [orderToPay, setOrderToPay] = useState<WarungOrder | null>(null);
+  const [payAccountId, setPayAccountId] = useState<string>("");
+  const [autoDeductOnPay, setAutoDeductOnPay] = useState<boolean>(true);
 
   // Sinkronisasi dengan localStorage jika server data kosong atau offline
   useEffect(() => {
@@ -69,11 +82,9 @@ export function WarungView({ initialOrders, isConfigured = true }: WarungViewPro
   // Filter daftar pesanan
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
-      // Filter status
       if (activeTab === "unpaid" && order.is_paid) return false;
       if (activeTab === "paid" && !order.is_paid) return false;
 
-      // Filter pencarian
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
       const matchWarung = order.warung_name.toLowerCase().includes(query);
@@ -102,25 +113,45 @@ export function WarungView({ initialOrders, isConfigured = true }: WarungViewPro
     });
   };
 
-  // Toggle status pembayaran
-  const handleTogglePayment = async (order: WarungOrder) => {
+  // Mulai alur pelunasan bon
+  const handleInitiatePaymentToggle = (order: WarungOrder) => {
+    if (!order.is_paid) {
+      // Jika saat ini kasbon dan mau ditandai lunas, tanyakan akun untuk potong saldo
+      if (accounts.length > 0) {
+        setPayAccountId(order.account_id || accounts[0]?.id || "");
+        setAutoDeductOnPay(true);
+        setOrderToPay(order);
+        return;
+      }
+    }
+    // Jika tidak ada akun atau mengubah dari lunas kembali ke kasbon
+    executeTogglePayment(order, null);
+  };
+
+  const executeTogglePayment = async (order: WarungOrder, accountId: string | null) => {
     setActionError(null);
     const newStatus = !order.is_paid;
 
     // Optimistic UI update
     setOrders((prev) => {
       const next = prev.map((o) =>
-        o.id === order.id ? { ...o, is_paid: newStatus } : o
+        o.id === order.id
+          ? {
+              ...o,
+              is_paid: newStatus,
+              account_id: newStatus ? (accountId || o.account_id) : o.account_id,
+            }
+          : o
       );
       saveToLocalStorage(next);
       return next;
     });
 
-    const res = await toggleWarungPaymentStatus(order.id, order.is_paid);
+    const res = await toggleWarungPaymentStatus(order.id, order.is_paid, accountId);
     if (res?.error) {
-      // Jika di server gagal (misal table belum dimigrasi), data lokal tetap terjaga
       console.warn("Server sync error (saved locally):", res.error);
     }
+    setOrderToPay(null);
   };
 
   // Hapus pesanan
@@ -165,6 +196,12 @@ export function WarungView({ initialOrders, isConfigured = true }: WarungViewPro
     } catch {
       return dateString;
     }
+  };
+
+  const getAccountName = (accId: string | null | undefined) => {
+    if (!accId) return null;
+    const found = accounts.find((a) => a.id === accId);
+    return found ? found.name : null;
   };
 
   return (
@@ -258,9 +295,9 @@ export function WarungView({ initialOrders, isConfigured = true }: WarungViewPro
             Semua ({summary.totalOrders})
           </button>
           <button
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
               activeTab === "unpaid"
-                ? "bg-amber-500 text-white shadow-xs dark:bg-amber-600"
+                ? "bg-amber-400 text-amber-950 shadow-xs dark:bg-amber-500 dark:text-black"
                 : "text-muted-foreground hover:text-foreground"
             }`}
             onClick={() => setActiveTab("unpaid")}
@@ -270,7 +307,7 @@ export function WarungView({ initialOrders, isConfigured = true }: WarungViewPro
             Kasbon ({summary.unpaidCount})
           </button>
           <button
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
               activeTab === "paid"
                 ? "bg-emerald-600 text-white shadow-xs dark:bg-emerald-700"
                 : "text-muted-foreground hover:text-foreground"
@@ -321,7 +358,7 @@ export function WarungView({ initialOrders, isConfigured = true }: WarungViewPro
           <p className="mt-1.5 max-w-sm text-xs text-muted-foreground sm:text-sm">
             {searchQuery
               ? "Coba kata kunci lain atau bersihkan kotak pencarian."
-              : "Catat setiap kali makan di warteg, warkop, atau jajan agar tidak lupa apa saja menu yang dipesan dan total harganya."}
+              : "Catat setiap kali makan di warteg, warkop, atau jajan agar tidak lupa apa saja menu yang dipesan, total harganya, dan potong saldo akun otomatis."}
           </p>
           {!searchQuery && (
             <Button className="mt-5" onClick={openCreateModal} type="button">
@@ -332,151 +369,254 @@ export function WarungView({ initialOrders, isConfigured = true }: WarungViewPro
         </div>
       ) : (
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {filteredOrders.map((order) => (
-            <div
-              className={`flex flex-col justify-between overflow-hidden rounded-2xl border bg-card shadow-xs transition-all hover:shadow-md ${
-                order.is_paid
-                  ? "border-border/90"
-                  : "border-amber-400/80 ring-1 ring-amber-400/20 dark:border-amber-700/60"
-              }`}
-              key={order.id}
-            >
-              {/* Header Nota Warung */}
-              <div className="border-b border-border bg-muted/30 p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="text-base font-bold text-foreground">
-                      {order.warung_name}
-                    </h3>
-                    <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                      <Calendar size={12} />
-                      <span>{formatDateTime(order.ordered_at)}</span>
+          {filteredOrders.map((order) => {
+            const linkedAccountName = getAccountName(order.account_id);
+
+            return (
+              <div
+                className={`flex flex-col justify-between overflow-hidden rounded-2xl border bg-card shadow-xs transition-all hover:shadow-md ${
+                  order.is_paid
+                    ? "border-border/90"
+                    : "border-amber-400/80 ring-1 ring-amber-400/20 dark:border-amber-700/60"
+                }`}
+                key={order.id}
+              >
+                {/* Header Nota Warung */}
+                <div className="border-b border-border bg-muted/30 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="text-base font-bold text-foreground">
+                        {order.warung_name}
+                      </h3>
+                      <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <Calendar size={12} />
+                        <span>{formatDateTime(order.ordered_at)}</span>
+                      </div>
                     </div>
+
+                    {/* Badge Status Lunas / Belum Lunas */}
+                    <span
+                      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                        order.is_paid
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300"
+                          : "bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300"
+                      }`}
+                    >
+                      {order.is_paid ? (
+                        <>
+                          <CheckCircle2 size={12} />
+                          Lunas
+                        </>
+                      ) : (
+                        <>
+                          <Clock size={12} />
+                          Kasbon
+                        </>
+                      )}
+                    </span>
                   </div>
 
-                  {/* Badge Status Lunas / Belum Lunas */}
-                  <span
-                    className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                      order.is_paid
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300"
-                        : "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300"
-                    }`}
-                  >
-                    {order.is_paid ? (
-                      <>
-                        <CheckCircle2 size={12} />
-                        Lunas
-                      </>
-                    ) : (
-                      <>
-                        <Clock size={12} />
-                        Kasbon
-                      </>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              {/* Rincian Menu Yang Dipesan (Gaya Struk Kasir) */}
-              <div className="flex-1 p-4">
-                <div className="space-y-2 text-xs">
-                  {order.items && order.items.length > 0 ? (
-                    order.items.map((it, idx) => (
-                      <div
-                        className="flex items-center justify-between border-b border-border/40 pb-1.5 last:border-0 last:pb-0"
-                        key={it.id || idx}
-                      >
-                        <div className="flex items-baseline gap-2">
-                          <span className="font-mono font-bold text-[#b34455] dark:text-[#ffb9c3]">
-                            {it.qty}x
-                          </span>
-                          <span className="font-medium text-foreground">{it.name}</span>
-                          <span className="text-[10px] text-muted-foreground">
-                            @{formatRupiah(it.price)}
-                          </span>
-                        </div>
-                        <span className="font-semibold text-foreground">
-                          {formatRupiah(it.subtotal || it.qty * it.price)}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic">
-                      Tidak ada detail item.
-                    </p>
+                  {/* Keterangan Akun Pemotong Saldo */}
+                  {order.is_paid && linkedAccountName && (
+                    <div className="mt-2 flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                      <Wallet size={12} />
+                      <span>Saldo dipotong dari: {linkedAccountName}</span>
+                    </div>
                   )}
                 </div>
 
-                {/* Catatan jika ada */}
-                {order.notes && (
-                  <div className="mt-3 rounded-lg bg-muted/50 p-2 text-[11px] text-muted-foreground italic">
-                    &ldquo;{order.notes}&rdquo;
+                {/* Rincian Menu Yang Dipesan (Gaya Struk Kasir) */}
+                <div className="flex-1 p-4">
+                  <div className="space-y-2 text-xs">
+                    {order.items && order.items.length > 0 ? (
+                      order.items.map((it, idx) => (
+                        <div
+                          className="flex items-center justify-between border-b border-border/40 pb-1.5 last:border-0 last:pb-0"
+                          key={it.id || idx}
+                        >
+                          <div className="flex items-baseline gap-2">
+                            <span className="font-mono font-bold text-[#b34455] dark:text-[#ffb9c3]">
+                              {it.qty}x
+                            </span>
+                            <span className="font-medium text-foreground">{it.name}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              @{formatRupiah(it.price)}
+                            </span>
+                          </div>
+                          <span className="font-semibold text-foreground">
+                            {formatRupiah(it.subtotal || it.qty * it.price)}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">
+                        Tidak ada detail item.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Catatan jika ada */}
+                  {order.notes && (
+                    <div className="mt-3 rounded-lg bg-muted/50 p-2 text-[11px] text-muted-foreground italic">
+                      &ldquo;{order.notes}&rdquo;
+                    </div>
+                  )}
+                </div>
+
+                {/* Total Tagihan & Aksi Bawah */}
+                <div className="border-t border-border bg-muted/20 p-4">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Total Tagihan:
+                    </span>
+                    <span className="text-lg font-black tracking-tight text-[#8f3242] sm:text-xl dark:text-[#ffb9c3]">
+                      {formatRupiah(order.total_amount)}
+                    </span>
+                  </div>
+
+                  {/* Tombol Aksi */}
+                  <div className="mt-3 flex items-center justify-between gap-2 pt-2 border-t border-border/60">
+                    <button
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                        order.is_paid
+                          ? "border border-border bg-card text-muted-foreground hover:bg-muted"
+                          : "bg-emerald-600 text-white shadow-xs hover:bg-emerald-700"
+                      }`}
+                      onClick={() => handleInitiatePaymentToggle(order)}
+                      type="button"
+                    >
+                      {order.is_paid ? (
+                        <>
+                          <Clock size={13} />
+                          Ubah ke Kasbon
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 size={13} />
+                          Tandai Lunas
+                        </>
+                      )}
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        aria-label="Edit catatan ini"
+                        className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        onClick={() => openEditModal(order)}
+                        type="button"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button
+                        aria-label="Hapus catatan ini"
+                        className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/50"
+                        onClick={() => handleDelete(order)}
+                        type="button"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Modal Dialog Pelunasan dengan Pilihan Akun Potong Saldo */}
+      {orderToPay && (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+          role="dialog"
+        >
+          <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                  <CheckCircle2 size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Tandai Lunas Pesanan</h3>
+                  <p className="text-xs text-muted-foreground">{orderToPay.warung_name}</p>
+                </div>
+              </div>
+              <button
+                aria-label="Tutup"
+                className="size-8 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                onClick={() => setOrderToPay(null)}
+                type="button"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="py-4 space-y-4">
+              <div className="rounded-xl bg-muted/40 p-3.5 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Total Tagihan:</span>
+                <span className="text-lg font-black text-[#8f3242] dark:text-[#ffb9c3]">
+                  {formatRupiah(orderToPay.total_amount)}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    checked={autoDeductOnPay}
+                    className="size-4 rounded border-input text-[#b34455] focus:ring-[#b34455]"
+                    onChange={(e) => setAutoDeductOnPay(e.target.checked)}
+                    type="checkbox"
+                  />
+                  <span className="text-xs font-semibold text-foreground">
+                    Auto potong saldo dari akun keuangan
+                  </span>
+                </label>
+
+                {autoDeductOnPay && accounts.length > 0 && (
+                  <div className="space-y-1.5 pl-6">
+                    <label className="text-[11px] font-medium text-muted-foreground">
+                      Pilih Akun Sumber:
+                    </label>
+                    <select
+                      className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-medium text-foreground focus:border-[#b34455] focus:outline-none dark:focus:border-[#ffb9c3]"
+                      onChange={(e) => setPayAccountId(e.target.value)}
+                      value={payAccountId}
+                    >
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>
+                          {acc.name} ({acc.account_type.toUpperCase()})
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 )}
               </div>
-
-              {/* Total Tagihan & Aksi Bawah */}
-              <div className="border-t border-border bg-muted/20 p-4">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Total Tagihan:
-                  </span>
-                  <span className="text-lg font-black tracking-tight text-[#8f3242] sm:text-xl dark:text-[#ffb9c3]">
-                    {formatRupiah(order.total_amount)}
-                  </span>
-                </div>
-
-                {/* Tombol Aksi */}
-                <div className="mt-3 flex items-center justify-between gap-2 pt-2 border-t border-border/60">
-                  <button
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                      order.is_paid
-                        ? "border border-border bg-card text-muted-foreground hover:bg-muted"
-                        : "bg-emerald-600 text-white shadow-xs hover:bg-emerald-700"
-                    }`}
-                    onClick={() => handleTogglePayment(order)}
-                    type="button"
-                  >
-                    {order.is_paid ? (
-                      <>
-                        <Clock size={13} />
-                        Ubah ke Kasbon
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 size={13} />
-                        Tandai Lunas
-                      </>
-                    )}
-                  </button>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      aria-label="Edit catatan ini"
-                      className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      onClick={() => openEditModal(order)}
-                      type="button"
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                    <button
-                      aria-label="Hapus catatan ini"
-                      className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/50"
-                      onClick={() => handleDelete(order)}
-                      type="button"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
-          ))}
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+              <Button onClick={() => setOrderToPay(null)} type="button" variant="outline">
+                Batal
+              </Button>
+              <Button
+                onClick={() =>
+                  executeTogglePayment(
+                    orderToPay,
+                    autoDeductOnPay && payAccountId ? payAccountId : null
+                  )
+                }
+                type="button"
+              >
+                Konfirmasi Lunas
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Modal Form Tambah/Edit */}
       <WarungFormModal
+        accounts={accounts}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSaved={handleOrderSaved}

@@ -12,13 +12,15 @@ import {
   Banknote,
   Building2,
   CreditCard,
+  Eye,
+  EyeOff,
   Plus,
   Power,
   Trash2,
   Wallet,
   Wifi,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Account = Database["public"]["Tables"]["accounts"]["Row"] & {
   currentBalance: number;
@@ -39,6 +41,31 @@ export function AccountsView({
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [showBalance, setShowBalance] = useState(true);
+
+  // Baca preferensi visibilitas saldo dari browser
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("nabang_show_balance");
+      if (saved !== null) {
+        setShowBalance(saved === "true");
+      }
+    } catch {
+      /* noop */
+    }
+  }, []);
+
+  const handleToggleBalance = () => {
+    setShowBalance((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("nabang_show_balance", String(next));
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+  };
 
   const getAccountIcon = (type: string) => {
     switch (type) {
@@ -114,11 +141,21 @@ export function AccountsView({
       >
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase" id="total-balance-heading">
-              Total Saldo Seluruh Akun Aktif
-            </h2>
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase" id="total-balance-heading">
+                Total Saldo Seluruh Akun Aktif
+              </h2>
+              <button
+                aria-label={showBalance ? "Sembunyikan nominal saldo" : "Tampilkan nominal saldo"}
+                className="inline-flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-[#b34455]"
+                onClick={handleToggleBalance}
+                type="button"
+              >
+                {showBalance ? <Eye size={15} /> : <EyeOff size={15} />}
+              </button>
+            </div>
             <p className="mt-2 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-              {formatRupiah(totalBalance)}
+              {showBalance ? formatRupiah(totalBalance) : "Rp ••••••••••"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               Tergabung dari {accounts.filter((a) => a.is_active).length} akun aktif tersimpan.
@@ -203,7 +240,7 @@ export function AccountsView({
                       Saldo Berjalan
                     </span>
                     <p className="mt-0.5 text-2xl font-extrabold tracking-tight text-foreground">
-                      {formatRupiah(acc.currentBalance)}
+                      {showBalance ? formatRupiah(acc.currentBalance) : "Rp ••••••••••"}
                     </p>
                   </div>
                 </div>
@@ -211,7 +248,7 @@ export function AccountsView({
                 {/* Footer Kartu: Saldo Awal & Tombol Aksi */}
                 <div className="mt-6 flex items-center justify-between border-t border-border/70 pt-4 text-xs">
                   <span className="text-muted-foreground">
-                    Awal: {formatRupiah(acc.opening_balance)}
+                    Awal: {showBalance ? formatRupiah(acc.opening_balance) : "••••••••"}
                   </span>
                   <div className="flex items-center gap-1.5">
                     <button

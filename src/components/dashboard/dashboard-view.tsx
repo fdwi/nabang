@@ -2,6 +2,7 @@
 
 import { AccountBreakdown } from "@/components/dashboard/account-breakdown";
 import { CashflowChart, type ChartDataPoint } from "@/components/dashboard/cashflow-chart";
+import { DailyAllowanceCard } from "@/components/dashboard/daily-allowance-card";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { TransactionFormModal } from "@/components/transactions/transaction-form-modal";
@@ -25,7 +26,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Shuffle from "@/components/ui/shuffle";
 import TiltedCard from "@/components/ui/tilted-card";
 
@@ -39,6 +40,7 @@ type DashboardViewProps = {
   accounts: Account[];
   categories: Category[];
   displayName?: string;
+  monthlyBudget?: number | null;
   totalBalance: number;
   transactions: Transaction[];
 };
@@ -47,6 +49,7 @@ export function DashboardView({
   accounts,
   categories,
   displayName = "Pemilik",
+  monthlyBudget = null,
   totalBalance,
   transactions,
 }: DashboardViewProps) {
@@ -56,6 +59,30 @@ export function DashboardView({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"income" | "expense" | "transfer">("expense");
   const [showBalance, setShowBalance] = useState(true);
+
+  // Baca preferensi visibilitas saldo yang tersimpan di browser
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("nabang_show_balance");
+      if (saved !== null) {
+        setShowBalance(saved === "true");
+      }
+    } catch {
+      /* noop */
+    }
+  }, []);
+
+  const handleToggleBalance = () => {
+    setShowBalance((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("nabang_show_balance", String(next));
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+  };
 
   // Sapaan dinamis berdasarkan jam lokal
   const greeting = useMemo(() => {
@@ -206,7 +233,7 @@ export function DashboardView({
                   <button
                     aria-label={showBalance ? "Sembunyikan nominal saldo" : "Tampilkan nominal saldo"}
                     className="inline-flex size-7 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/20 hover:text-white pointer-events-auto"
-                    onClick={() => setShowBalance(!showBalance)}
+                    onClick={handleToggleBalance}
                     type="button"
                   >
                     {showBalance ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -319,6 +346,15 @@ export function DashboardView({
           </div>
         </div>
       </div>
+
+      {/* Widget Cerdas: Jatah Jajan Hari Ini (Safe-to-Spend) */}
+      <DailyAllowanceCard
+        monthlyBudget={monthlyBudget}
+        onOpenExpenseModal={() => openModal("expense")}
+        showBalance={showBalance}
+        totalBalance={totalBalance}
+        transactions={transactions}
+      />
 
       {/* Menu Aksi Cepat Ikon Bulat ala Livin' by Mandiri */}
       <section aria-label="Menu Transaksi Cepat" className="rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -502,6 +538,7 @@ export function DashboardView({
         />
         <AccountBreakdown
           accounts={accounts}
+          showBalance={showBalance}
           totalBalance={totalBalance}
         />
       </div>

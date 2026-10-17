@@ -34,6 +34,8 @@ export interface Database {
           items: WarungItem[];
           total_amount: number;
           is_paid: boolean;
+          account_id: string | null;
+          transaction_id: string | null;
           ordered_at: string;
           notes: string | null;
           created_at: string;
@@ -46,6 +48,8 @@ export interface Database {
           items?: WarungItem[];
           total_amount?: number;
           is_paid?: boolean;
+          account_id?: string | null;
+          transaction_id?: string | null;
           ordered_at?: string;
           notes?: string | null;
           created_at?: string;
@@ -58,6 +62,8 @@ export interface Database {
           items?: WarungItem[];
           total_amount?: number;
           is_paid?: boolean;
+          account_id?: string | null;
+          transaction_id?: string | null;
           ordered_at?: string;
           notes?: string | null;
           created_at?: string;

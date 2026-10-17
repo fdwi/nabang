@@ -3,14 +3,24 @@
 import { createWarungOrder, updateWarungOrder } from "@/actions/warung";
 import { Button } from "@/components/ui/button";
 import { formatRupiah } from "@/lib/formatters/currency";
+import type { WarungAccountOption } from "@/app/warung/page";
 import type { WarungItem, WarungOrder } from "@/types/database";
-import { CheckCircle2, Clock, Minus, Plus, Trash2, UtensilsCrossed, X } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  Minus,
+  Plus,
+  Trash2,
+  UtensilsCrossed,
+  X,
+} from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 
 type WarungFormModalProps = {
   isOpen: boolean;
   onClose: () => void;
   orderToEdit?: WarungOrder | null;
+  accounts?: WarungAccountOption[];
   onSaved?: (order: WarungOrder) => void;
 };
 
@@ -41,11 +51,14 @@ export function WarungFormModal({
   isOpen,
   onClose,
   orderToEdit,
+  accounts = [],
   onSaved,
 }: WarungFormModalProps) {
   const [warungName, setWarungName] = useState("");
   const [orderedAt, setOrderedAt] = useState("");
   const [isPaid, setIsPaid] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
+  const [autoDeduct, setAutoDeduct] = useState(true);
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<WarungItem[]>([
     { id: "item-1", name: "", qty: 1, price: 0, subtotal: 0 },
@@ -57,12 +70,13 @@ export function WarungFormModal({
   useEffect(() => {
     if (orderToEdit) {
       setWarungName(orderToEdit.warung_name);
-      // Format tanggal ISO ke YYYY-MM-DDTHH:mm untuk input datetime-local
       const date = new Date(orderToEdit.ordered_at);
       const tzOffset = date.getTimezoneOffset() * 60000;
       const localISOTime = new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
       setOrderedAt(localISOTime);
       setIsPaid(orderToEdit.is_paid);
+      setSelectedAccountId(orderToEdit.account_id || (accounts[0]?.id ?? ""));
+      setAutoDeduct(Boolean(orderToEdit.account_id || orderToEdit.is_paid));
       setNotes(orderToEdit.notes ?? "");
       setItems(
         orderToEdit.items && orderToEdit.items.length > 0
@@ -79,11 +93,25 @@ export function WarungFormModal({
       const localISOTime = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16);
       setOrderedAt(localISOTime);
       setIsPaid(false);
+      setSelectedAccountId(accounts[0]?.id ?? "");
+      setAutoDeduct(true);
       setNotes("");
       setItems([{ id: "item-1", name: "", qty: 1, price: 0, subtotal: 0 }]);
     }
     setErrorMessage(null);
-  }, [orderToEdit, isOpen]);
+  }, [orderToEdit, isOpen, accounts]);
+
+  // Event listener untuk tombol Escape (Aksesibilitas R-32 & R-26)
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -141,7 +169,6 @@ export function WarungFormModal({
   // Tambah preset menu cepat
   const addPresetItem = (preset: { name: string; price: number }) => {
     setItems((prev) => {
-      // Jika baris pertama masih kosong belum diketik apa-apa, pakai baris itu
       if (prev.length === 1 && !prev[0].name.trim() && prev[0].price === 0) {
         return [
           {
@@ -190,6 +217,8 @@ export function WarungFormModal({
       ordered_at: new Date(orderedAt).toISOString(),
       is_paid: isPaid,
       notes: notes.trim() || null,
+      account_id: isPaid && autoDeduct && selectedAccountId ? selectedAccountId : null,
+      auto_deduct: isPaid && autoDeduct && Boolean(selectedAccountId),
       items: validItems.map((it) => ({
         id: it.id,
         name: it.name.trim(),
@@ -207,7 +236,6 @@ export function WarungFormModal({
         res = await createWarungOrder(payload);
       }
 
-      // Jika berhasil di Supabase server
       if (res?.success) {
         if (onSaved) {
           onSaved({
@@ -217,6 +245,8 @@ export function WarungFormModal({
             items: payload.items,
             total_amount: grandTotal,
             is_paid: payload.is_paid,
+            account_id: payload.account_id,
+            transaction_id: orderToEdit?.transaction_id || null,
             ordered_at: payload.ordered_at,
             notes: payload.notes,
             created_at: new Date().toISOString(),
@@ -225,7 +255,7 @@ export function WarungFormModal({
         }
         onClose();
       } else if (res?.error) {
-        // Jika error karena tabel belum ada di Supabase, fallback simpan lokal agar pengguna tetap bisa pakai
+        // Fallback simpan lokal jika database belum terhubung
         if (onSaved) {
           const fallbackOrder: WarungOrder = {
             id: orderToEdit ? orderToEdit.id : `local-${Date.now()}`,
@@ -234,6 +264,8 @@ export function WarungFormModal({
             items: payload.items,
             total_amount: grandTotal,
             is_paid: payload.is_paid,
+            account_id: payload.account_id,
+            transaction_id: orderToEdit?.transaction_id || null,
             ordered_at: payload.ordered_at,
             notes: payload.notes,
             created_at: new Date().toISOString(),
@@ -254,7 +286,7 @@ export function WarungFormModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
       role="dialog"
     >
-      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-border bg-card shadow-2xl">
+      <div className="relative flex max-h-[92vh] w-full max-w-2xl flex-col rounded-2xl border border-border bg-card shadow-2xl">
         {/* Header Modal */}
         <div className="flex items-center justify-between border-b border-border p-5 sm:p-6">
           <div className="flex items-center gap-3">
@@ -266,7 +298,7 @@ export function WarungFormModal({
                 {orderToEdit ? "Edit Catatan Warung" : "Catat Pembelian di Warung"}
               </h2>
               <p className="text-xs text-muted-foreground sm:text-sm">
-                Catat menu yang dipesan, harga satuan, dan status pelunasan bon.
+                Catat menu yang dipesan, harga satuan, dan potong saldo akun otomatis saat lunas.
               </p>
             </div>
           </div>
@@ -348,9 +380,9 @@ export function WarungFormModal({
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                       !isPaid
-                        ? "bg-amber-500 text-white shadow-xs dark:bg-amber-600"
+                        ? "bg-amber-400 text-amber-950 shadow-xs dark:bg-amber-500 dark:text-black"
                         : "border border-border bg-background text-muted-foreground hover:bg-muted"
                     }`}
                     onClick={() => setIsPaid(false)}
@@ -360,7 +392,7 @@ export function WarungFormModal({
                     Belum Lunas (Kasbon)
                   </button>
                   <button
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                       isPaid
                         ? "bg-emerald-600 text-white shadow-xs dark:bg-emerald-700"
                         : "border border-border bg-background text-muted-foreground hover:bg-muted"
@@ -373,6 +405,55 @@ export function WarungFormModal({
                   </button>
                 </div>
               </div>
+
+              {/* Fitur Auto Potong Saldo Akun (Hanya tampil saat status Lunas) */}
+              {isPaid && (
+                <div className="mt-4 pt-3.5 border-t border-border/70 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        checked={autoDeduct}
+                        className="size-4 rounded border-input text-[#b34455] focus:ring-[#b34455]"
+                        onChange={(e) => setAutoDeduct(e.target.checked)}
+                        type="checkbox"
+                      />
+                      <span className="text-xs font-semibold text-foreground">
+                        Auto potong saldo dari akun yang dipilih
+                      </span>
+                    </label>
+                  </div>
+
+                  {autoDeduct && (
+                    <div>
+                      {accounts.length > 0 ? (
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-medium text-muted-foreground">
+                            Pilih Akun Sumber Pembayaran:
+                          </label>
+                          <select
+                            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-medium text-foreground focus:border-[#b34455] focus:outline-none dark:focus:border-[#ffb9c3]"
+                            onChange={(e) => setSelectedAccountId(e.target.value)}
+                            value={selectedAccountId}
+                          >
+                            {accounts.map((acc) => (
+                              <option key={acc.id} value={acc.id}>
+                                {acc.name} ({acc.account_type.toUpperCase()})
+                              </option>
+                            ))}
+                          </select>
+                          <p className="text-[11px] text-muted-foreground">
+                            Saldo akun di atas akan otomatis berkurang sebesar total belanja saat pesanan disimpan.
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-amber-700 dark:text-amber-400 italic">
+                          Belum ada akun finansial aktif. Tambahkan akun di menu &ldquo;Akun &amp; Saldo&rdquo; untuk mengaktifkan pemotongan saldo otomatis.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Quick Chips Menu Populer */}
@@ -421,7 +502,7 @@ export function WarungFormModal({
                     key={item.id}
                   >
                     {/* Nama Item */}
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-[140px]">
                       <input
                         className="w-full rounded-lg border border-input bg-card px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-[#b34455] focus:outline-none dark:focus:border-[#ffb9c3]"
                         onChange={(e) => updateItem(index, "name", e.target.value)}
@@ -432,8 +513,8 @@ export function WarungFormModal({
                       />
                     </div>
 
-                    {/* Qty & Stepper Controls */}
-                    <div className="flex items-center gap-2">
+                    {/* Qty & Stepper Controls & Harga */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-start">
                       <div className="flex items-center rounded-lg border border-input bg-card shadow-xs">
                         <button
                           aria-label="Kurangi jumlah"
@@ -447,7 +528,7 @@ export function WarungFormModal({
                           <Minus size={13} />
                         </button>
                         <input
-                          className="w-11 bg-transparent py-1.5 text-center text-sm font-semibold text-foreground focus:outline-none"
+                          className="w-10 bg-transparent py-1.5 text-center text-sm font-semibold text-foreground focus:outline-none"
                           min={1}
                           onBlur={(e) => {
                             if (!e.target.value || Number(e.target.value) < 1) {
@@ -474,7 +555,7 @@ export function WarungFormModal({
 
                       <span className="text-xs text-muted-foreground font-medium">x</span>
 
-                      <div className="w-28 sm:w-32">
+                      <div className="w-24 sm:w-28">
                         <input
                           className="w-full rounded-lg border border-input bg-card px-2.5 py-1.5 text-sm text-foreground focus:border-[#b34455] focus:outline-none dark:focus:border-[#ffb9c3]"
                           min={0}
@@ -492,7 +573,7 @@ export function WarungFormModal({
                       </div>
 
                       {/* Subtotal */}
-                      <div className="w-24 text-right text-xs font-semibold text-foreground sm:w-28 sm:text-sm">
+                      <div className="min-w-[80px] text-right text-xs font-semibold text-foreground sm:w-24 sm:text-sm">
                         {formatRupiah(item.subtotal || 0)}
                       </div>
 
@@ -522,7 +603,7 @@ export function WarungFormModal({
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-2xl font-black tracking-tight text-[#8f3242] sm:text-3xl dark:text-[#ffb9c3]">
+                <span className="text-2xl font-black tracking-tight text-[#8f3242] sm:text-3xl dark:text-[#ffc4cb]">
                   {formatRupiah(grandTotal)}
                 </span>
               </div>

@@ -16,6 +16,7 @@ export default async function DashboardPage() {
   let categories: Category[] = [];
   let transactions: Transaction[] = [];
   let displayName = "Pemilik";
+  let monthlyBudget: number | null = null;
   let isConfigured = true;
 
   try {
@@ -25,7 +26,10 @@ export default async function DashboardPage() {
     } = await supabase.auth.getUser();
 
     if (user) {
-      const [accRes, catRes, txRes, profRes] = await Promise.all([
+      const now = new Date();
+      const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+
+      const [accRes, catRes, txRes, profRes, budRes] = await Promise.all([
         supabase
           .from("accounts")
           .select("*")
@@ -46,6 +50,11 @@ export default async function DashboardPage() {
           .select("display_name")
           .eq("id", user.id)
           .maybeSingle(),
+        supabase
+          .from("budgets")
+          .select("limit_amount, month")
+          .eq("user_id", user.id)
+          .eq("month", currentMonthStr),
       ]);
 
       accounts = accRes.data || [];
@@ -56,6 +65,12 @@ export default async function DashboardPage() {
         user.user_metadata?.display_name ||
         user.email?.split("@")[0] ||
         "Pemilik";
+
+      const totalMonthlyBudget = (budRes.data || []).reduce(
+        (sum, b) => sum + (Number(b.limit_amount) || 0),
+        0
+      );
+      monthlyBudget = totalMonthlyBudget > 0 ? totalMonthlyBudget : null;
     }
   } catch {
     isConfigured = false;
@@ -81,6 +96,7 @@ export default async function DashboardPage() {
         accounts={accountsWithBalance}
         categories={categories}
         displayName={displayName}
+        monthlyBudget={monthlyBudget}
         totalBalance={totalBalance}
         transactions={transactions}
       />

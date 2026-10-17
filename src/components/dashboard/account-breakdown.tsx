@@ -10,9 +10,14 @@ type Account = Database["public"]["Tables"]["accounts"]["Row"] & {
 type AccountBreakdownProps = {
   accounts: Account[];
   totalBalance: number;
+  showBalance?: boolean;
 };
 
-export function AccountBreakdown({ accounts, totalBalance }: AccountBreakdownProps) {
+export function AccountBreakdown({
+  accounts,
+  totalBalance,
+  showBalance = true,
+}: AccountBreakdownProps) {
   const activeAccounts = accounts.filter((a) => a.is_active);
 
   const getAccountIcon = (type: string) => {
@@ -63,7 +68,7 @@ export function AccountBreakdown({ accounts, totalBalance }: AccountBreakdownPro
                     <span className="font-medium text-foreground">{acc.name}</span>
                   </div>
                   <span className="font-semibold text-foreground">
-                    {formatRupiah(acc.currentBalance)}
+                    {showBalance ? formatRupiah(acc.currentBalance) : "••••••••"}
                   </span>
                 </div>
 
