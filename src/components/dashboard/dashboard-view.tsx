@@ -53,9 +53,9 @@ export function DashboardView({
   totalBalance,
   transactions,
 }: DashboardViewProps) {
-  const [period, setPeriod] = useState<"this_month" | "last_3_months" | "this_year" | "all">(
-    "this_month"
-  );
+  const [period, setPeriod] = useState<
+    "today" | "last_7_days" | "this_month" | "last_3_months" | "this_year" | "all"
+  >("this_month");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"income" | "expense" | "transfer">("expense");
   const [showBalance, setShowBalance] = useState(true);
@@ -98,9 +98,23 @@ export function DashboardView({
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
+    const currentDate = now.getDate();
 
     return transactions.filter((tx) => {
       const txDate = new Date(tx.occurred_at);
+
+      if (period === "today") {
+        return (
+          txDate.getFullYear() === currentYear &&
+          txDate.getMonth() === currentMonth &&
+          txDate.getDate() === currentDate
+        );
+      }
+
+      if (period === "last_7_days") {
+        const sevenDaysAgo = new Date(currentYear, currentMonth, currentDate - 6, 0, 0, 0, 0);
+        return txDate >= sevenDaysAgo;
+      }
 
       if (period === "this_month") {
         return (
@@ -138,15 +152,58 @@ export function DashboardView({
 
   const cashFlow = periodIncome - periodExpense;
 
-  // Siapkan data grafik bulanan (6 bulan terakhir)
+  // Siapkan data grafik arus kas (Harian jika memilih Hari Ini / 7 Hari, atau Bulanan 6 bulan)
+  const isDailyChart = period === "today" || period === "last_7_days";
+
   const chartData: ChartDataPoint[] = useMemo(() => {
+    const now = new Date();
+
+    if (isDailyChart) {
+      // Tampilkan 7 hari terakhir secara harian (per hari)
+      const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+      const points: ChartDataPoint[] = [];
+
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        const dateNum = d.getDate();
+        const dayLabel = i === 0 ? "Hari Ini" : `${dayNames[d.getDay()]} ${dateNum}`;
+
+        const txsInDay = transactions.filter((tx) => {
+          const tDate = new Date(tx.occurred_at);
+          return (
+            tDate.getFullYear() === y &&
+            tDate.getMonth() === m &&
+            tDate.getDate() === dateNum
+          );
+        });
+
+        const income = txsInDay
+          .filter((tx) => tx.type === "income")
+          .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+
+        const expense = txsInDay
+          .filter((tx) => tx.type === "expense")
+          .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+
+        points.push({
+          expense,
+          income,
+          label: dayLabel,
+        });
+      }
+
+      return points;
+    }
+
+    // Default: Bulanan (6 bulan terakhir)
     const monthNames = [
       "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
       "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
     ];
 
     const points: ChartDataPoint[] = [];
-    const now = new Date();
 
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -167,14 +224,14 @@ export function DashboardView({
         .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
 
       points.push({
-        label: `${monthNames[m]} ${y !== now.getFullYear() ? `'${String(y).slice(2)}` : ""}`,
-        income,
         expense,
+        income,
+        label: monthNames[m],
       });
     }
 
     return points;
-  }, [transactions]);
+  }, [transactions, isDailyChart]);
 
   const openModal = (type: "income" | "expense" | "transfer") => {
     setModalType(type);
@@ -444,6 +501,8 @@ export function DashboardView({
             <span className="text-xs font-medium text-muted-foreground sm:text-sm">Filter Periode:</span>
             <div className="flex flex-wrap gap-1">
               {[
+                { id: "today", label: "Hari Ini" },
+                { id: "last_7_days", label: "7 Hari" },
                 { id: "this_month", label: "Bulan Ini" },
                 { id: "last_3_months", label: "3 Bulan" },
                 { id: "this_year", label: "Tahun Ini" },
@@ -485,14 +544,26 @@ export function DashboardView({
             value={totalBalance}
           />
           <StatCard
-            description="Total arus masuk pada periode ini"
+            description={
+              period === "today"
+                ? "Total arus masuk hari ini"
+                : period === "last_7_days"
+                  ? "Total arus masuk 7 hari terakhir"
+                  : "Total arus masuk pada periode ini"
+            }
             icon={ArrowDownLeft}
             title="Pemasukan"
             trend="positive"
             value={periodIncome}
           />
           <StatCard
-            description="Total arus keluar pada periode ini"
+            description={
+              period === "today"
+                ? "Total arus keluar hari ini"
+                : period === "last_7_days"
+                  ? "Total arus keluar 7 hari terakhir"
+                  : "Total arus keluar pada periode ini"
+            }
             icon={ArrowUpRight}
             title="Pengeluaran"
             trend="negative"
@@ -508,7 +579,7 @@ export function DashboardView({
         </section>
       </div>
 
-      {/* Bagian Grafik Tren Arus Kas 6 Bulan Terakhir */}
+      {/* Bagian Grafik Tren Arus Kas */}
       <section
         aria-labelledby="chart-heading"
         className="rounded-2xl border border-border bg-card p-5 sm:p-6"
@@ -516,10 +587,14 @@ export function DashboardView({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-base font-semibold" id="chart-heading">
-              Tren Arus Kas (6 Bulan Terakhir)
+              {isDailyChart
+                ? "Tren Arus Kas Harian (7 Hari Terakhir)"
+                : "Tren Arus Kas (6 Bulan Terakhir)"}
             </h3>
             <p className="text-xs text-muted-foreground">
-              Perbandingan nominal pemasukan dan pengeluaran setiap bulan.
+              {isDailyChart
+                ? "Perbandingan nominal pemasukan dan pengeluaran per hari."
+                : "Perbandingan nominal pemasukan dan pengeluaran setiap bulan."}
             </p>
           </div>
         </div>

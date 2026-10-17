@@ -36,6 +36,7 @@ export function TransactionsView({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"income" | "expense" | "transfer">("expense");
   const [search, setSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState<"all" | "today" | "last_7_days" | "this_month">("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [accountFilter, setAccountFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -52,6 +53,32 @@ export function TransactionsView({
   // Filter logika
   const filteredTransactions = useMemo(() => {
     return transactions.filter((tx) => {
+      // Filter tanggal / periode
+      if (dateFilter !== "all") {
+        const txDate = new Date(tx.occurred_at);
+        const now = new Date();
+        const cy = now.getFullYear();
+        const cm = now.getMonth();
+        const cd = now.getDate();
+
+        if (dateFilter === "today") {
+          if (
+            txDate.getFullYear() !== cy ||
+            txDate.getMonth() !== cm ||
+            txDate.getDate() !== cd
+          ) {
+            return false;
+          }
+        } else if (dateFilter === "last_7_days") {
+          const sevenDaysAgo = new Date(cy, cm, cd - 6, 0, 0, 0, 0);
+          if (txDate < sevenDaysAgo) return false;
+        } else if (dateFilter === "this_month") {
+          if (txDate.getFullYear() !== cy || txDate.getMonth() !== cm) {
+            return false;
+          }
+        }
+      }
+
       // Filter tipe
       if (typeFilter !== "all" && tx.type !== typeFilter) return false;
 
@@ -84,7 +111,7 @@ export function TransactionsView({
 
       return true;
     });
-  }, [transactions, typeFilter, accountFilter, categoryFilter, search, accountMap, categoryMap]);
+  }, [transactions, dateFilter, typeFilter, accountFilter, categoryFilter, search, accountMap, categoryMap]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Hapus catatan transaksi ini? Saldo akun terkait akan disesuaikan otomatis.")) {
@@ -168,7 +195,33 @@ export function TransactionsView({
       </div>
 
       {/* Filter Bar ala Livin' Pills */}
-      <section aria-label="Filter mutasi transaksi" className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-xs">
+      <section aria-label="Filter mutasi transaksi" className="space-y-4 rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-xs">
+        {/* Quick Date Pills: Semua, Hari Ini, 7 Hari, Bulan Ini */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-muted-foreground">Periode:</span>
+          <div className="flex flex-wrap gap-1">
+            {[
+              { id: "all", label: "Semua Waktu" },
+              { id: "today", label: "Hari Ini" },
+              { id: "last_7_days", label: "7 Hari Terakhir" },
+              { id: "this_month", label: "Bulan Ini" },
+            ].map(({ id, label }) => (
+              <button
+                className={`min-h-9 rounded-lg px-3 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-[#b34455] ${
+                  dateFilter === id
+                    ? "bg-[#b34455] text-white dark:bg-[#ffb9c3] dark:text-[#8f3242]"
+                    : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+                key={id}
+                onClick={() => setDateFilter(id as typeof dateFilter)}
+                type="button"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Pencarian */}
           <div className="relative">

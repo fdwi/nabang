@@ -6,6 +6,7 @@ import type { Database } from "@/types/database";
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  CalendarDays,
   Download,
   PieChart,
   Scale,
@@ -28,9 +29,9 @@ export function ReportsView({
   categories,
   transactions,
 }: ReportsViewProps) {
-  const [period, setPeriod] = useState<"this_month" | "last_month" | "this_year" | "all">(
-    "this_month"
-  );
+  const [period, setPeriod] = useState<
+    "today" | "last_7_days" | "this_month" | "last_month" | "this_year" | "all"
+  >("this_month");
   const [selectedAccountId, setSelectedAccountId] = useState<string>("all");
 
   const accountMap = useMemo(() => new Map(accounts.map((a) => [a.id, a.name])), [accounts]);
@@ -41,6 +42,7 @@ export function ReportsView({
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
+    const currentDate = now.getDate();
 
     return transactions.filter((tx) => {
       // Filter akun
@@ -53,6 +55,19 @@ export function ReportsView({
       }
 
       const txDate = new Date(tx.occurred_at);
+
+      if (period === "today") {
+        return (
+          txDate.getFullYear() === currentYear &&
+          txDate.getMonth() === currentMonth &&
+          txDate.getDate() === currentDate
+        );
+      }
+
+      if (period === "last_7_days") {
+        const sevenDaysAgo = new Date(currentYear, currentMonth, currentDate - 6, 0, 0, 0, 0);
+        return txDate >= sevenDaysAgo;
+      }
 
       if (period === "this_month") {
         return (
@@ -139,6 +154,45 @@ export function ReportsView({
       .sort((a, b) => b.amount - a.amount);
   }, [filteredTransactions, categoryMap, totalIncome]);
 
+  // Rincian Arus Kas Per Hari (Daily Breakdown)
+  const dailyBreakdown = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        count: number;
+        date: string;
+        displayDate: string;
+        expense: number;
+        income: number;
+      }
+    >();
+
+    filteredTransactions.forEach((tx) => {
+      const d = new Date(tx.occurred_at);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const existing = map.get(dateKey) || {
+        count: 0,
+        date: dateKey,
+        displayDate: new Intl.DateTimeFormat("id-ID", {
+          day: "numeric",
+          month: "short",
+          weekday: "short",
+          year: "numeric",
+          timeZone: "Asia/Jakarta",
+        }).format(d),
+        expense: 0,
+        income: 0,
+      };
+
+      if (tx.type === "income") existing.income += Number(tx.amount) || 0;
+      if (tx.type === "expense") existing.expense += Number(tx.amount) || 0;
+      existing.count += 1;
+      map.set(dateKey, existing);
+    });
+
+    return Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
+  }, [filteredTransactions]);
+
   // Ekspor CSV Laporan
   const handleExportCSV = () => {
     if (filteredTransactions.length === 0) return;
@@ -195,6 +249,8 @@ export function ReportsView({
           {/* Pilihan Periode */}
           <div className="flex flex-wrap gap-1">
             {[
+              { id: "today", label: "Hari Ini" },
+              { id: "last_7_days", label: "7 Hari" },
               { id: "this_month", label: "Bulan Ini" },
               { id: "last_month", label: "Bulan Lalu" },
               { id: "this_year", label: "Tahun Ini" },
@@ -390,6 +446,84 @@ export function ReportsView({
           )}
         </section>
       </div>
+
+      {/* Rekapitulasi Arus Kas Harian (Per Hari) */}
+      <section
+        aria-labelledby="daily-breakdown-heading"
+        className="overflow-hidden rounded-3xl border border-border bg-card shadow-xs"
+      >
+        <div className="flex flex-col justify-between gap-1 border-b border-border bg-muted/30 p-5 sm:flex-row sm:items-center sm:p-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <CalendarDays className="size-4 text-[#b34455] dark:text-[#ffb9c3]" />
+              <h3 className="text-base font-bold text-foreground" id="daily-breakdown-heading">
+                Rekapitulasi Arus Kas Harian (Per Hari)
+              </h3>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ringkasan pemasukan, pengeluaran, dan selisih bersih pada setiap tanggal.
+            </p>
+          </div>
+          <span className="text-xs font-medium text-muted-foreground">
+            {dailyBreakdown.length} hari dengan aktivitas mutasi
+          </span>
+        </div>
+
+        {dailyBreakdown.length === 0 ? (
+          <div className="p-8 text-center text-xs text-muted-foreground sm:text-sm">
+            Tidak ada transaksi pada periode ini.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-border bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <tr>
+                  <th className="px-5 py-3.5 sm:px-6">Tanggal</th>
+                  <th className="px-5 py-3.5 text-right sm:px-6">Pemasukan</th>
+                  <th className="px-5 py-3.5 text-right sm:px-6">Pengeluaran</th>
+                  <th className="px-5 py-3.5 text-right sm:px-6">Arus Kas Bersih</th>
+                  <th className="px-5 py-3.5 text-center sm:px-6">Mutasi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {dailyBreakdown.map((item) => {
+                  const net = item.income - item.expense;
+                  return (
+                    <tr className="transition-colors hover:bg-muted/30" key={item.date}>
+                      <td className="px-5 py-3.5 font-medium text-foreground whitespace-nowrap sm:px-6">
+                        {item.displayDate}
+                      </td>
+                      <td className="px-5 py-3.5 text-right font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap sm:px-6">
+                        {item.income > 0 ? `+${formatRupiah(item.income)}` : "-"}
+                      </td>
+                      <td className="px-5 py-3.5 text-right font-medium text-rose-600 dark:text-rose-400 whitespace-nowrap sm:px-6">
+                        {item.expense > 0 ? `-${formatRupiah(item.expense)}` : "-"}
+                      </td>
+                      <td className="px-5 py-3.5 text-right font-bold whitespace-nowrap sm:px-6">
+                        <span
+                          className={
+                            net > 0
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : net < 0
+                                ? "text-rose-600 dark:text-rose-400"
+                                : "text-muted-foreground"
+                          }
+                        >
+                          {net > 0 ? "+" : ""}
+                          {formatRupiah(net)}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-center text-xs text-muted-foreground whitespace-nowrap sm:px-6">
+                        {item.count} transaksi
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       {/* Rincian Riwayat Mutasi Laporan */}
       <section aria-labelledby="report-tx-heading" className="overflow-hidden rounded-3xl border border-border bg-card shadow-xs">
