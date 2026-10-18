@@ -20,6 +20,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   List<AccountModel> _accounts = [];
   List<CategoryModel> _categories = [];
   String _filterType = 'all'; // all, expense, income, transfer
+  String _filterPeriod = 'all'; // all, today, last_7_days, this_month
 
   @override
   void initState() {
@@ -74,9 +75,22 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filterType == 'all'
-        ? _allTransactions
-        : _allTransactions.where((t) => t.type == _filterType).toList();
+    final now = DateTime.now();
+    final filtered = _allTransactions.where((t) {
+      if (_filterType != 'all' && t.type != _filterType) return false;
+
+      if (_filterPeriod == 'today') {
+        return t.occurredAt.year == now.year &&
+            t.occurredAt.month == now.month &&
+            t.occurredAt.day == now.day;
+      } else if (_filterPeriod == 'last_7_days') {
+        final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
+        return t.occurredAt.isAfter(start.subtract(const Duration(seconds: 1)));
+      } else if (_filterPeriod == 'this_month') {
+        return t.occurredAt.year == now.year && t.occurredAt.month == now.month;
+      }
+      return true;
+    }).toList();
 
     return Scaffold(
       backgroundColor: NabangColors.background,
@@ -103,15 +117,34 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Filter row
+            // Filter row: Period
             Container(
               color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 6),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip('all', 'Semua'),
+                    _buildPeriodChip('all', 'Semua Waktu'),
+                    const SizedBox(width: 8),
+                    _buildPeriodChip('today', 'Hari Ini'),
+                    const SizedBox(width: 8),
+                    _buildPeriodChip('last_7_days', '7 Hari'),
+                    const SizedBox(width: 8),
+                    _buildPeriodChip('this_month', 'Bulan Ini'),
+                  ],
+                ),
+              ),
+            ),
+            // Filter row: Type
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip('all', 'Semua Jenis'),
                     const SizedBox(width: 8),
                     _buildFilterChip('expense', 'Pengeluaran'),
                     const SizedBox(width: 8),
@@ -257,6 +290,33 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPeriodChip(String key, String label) {
+    final isSelected = _filterPeriod == key;
+    return GestureDetector(
+      onTap: () => setState(() => _filterPeriod = key),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 38),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF4A3E3D) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF4A3E3D) : NabangColors.border,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? Colors.white : NabangColors.textSecondary,
+          ),
         ),
       ),
     );

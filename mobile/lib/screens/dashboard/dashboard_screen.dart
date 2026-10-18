@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/colors.dart';
 import '../../core/formatters/currency_formatter.dart';
 import '../../models/account_model.dart';
@@ -6,6 +7,8 @@ import '../../models/category_model.dart';
 import '../../models/transaction_model.dart';
 import '../../services/supabase_service.dart';
 import '../transactions/add_transaction_sheet.dart';
+import '../warung/warung_screen.dart';
+import 'widgets/daily_allowance_card.dart';
 
 class DashboardScreen extends StatefulWidget {
   final Function(int) onNavigateTab;
@@ -24,7 +27,12 @@ class DashboardScreen extends StatefulWidget {
 class DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
   bool _showBalance = true;
-  String _selectedPeriod = 'this_month'; // this_month, last_3_months, this_year, all
+  bool _showDailyAllowance = true;
+  String _allowanceMode = 'balance'; // 'custom' | 'balance' | 'budget'
+  num _customAllowanceAmount = 50000;
+  int _paydayDay = 1;
+  num? _monthlyBudget;
+  String _selectedPeriod = 'this_month'; // today, last_7_days, this_month, last_3_months, this_year, all
   String _displayName = 'Pemilik';
 
   List<AccountModel> _accounts = [];
@@ -51,15 +59,27 @@ class DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadData() async {
     try {
+      final now = DateTime.now();
+      final currentMonthStr = "${now.year}-${now.month.toString().padLeft(2, '0')}";
+
       final accountsFuture = SupabaseService.instance.getAccounts();
       final categoriesFuture = SupabaseService.instance.getCategories();
       final transactionsFuture = SupabaseService.instance.getTransactions(limit: 50);
       final profileNameFuture = SupabaseService.instance.getDisplayName();
+      final budgetsFuture = SupabaseService.instance.getBudgets(month: currentMonthStr);
+      final prefsFuture = SharedPreferences.getInstance();
 
       final accounts = await accountsFuture;
       final categories = await categoriesFuture;
       final transactions = await transactionsFuture;
       final profileName = await profileNameFuture;
+      final budgets = await budgetsFuture;
+      final prefs = await prefsFuture;
+
+      num budgetSum = 0;
+      for (final b in budgets) {
+        budgetSum += b.limitAmount;
+      }
 
       num totalBal = 0;
       for (final a in accounts) {
@@ -74,13 +94,25 @@ class DashboardScreenState extends State<DashboardScreen> {
         computedName = userEmail.split('@')[0];
       }
 
+      final savedShowBalance = prefs.getBool('nabang_show_balance') ?? true;
+      final savedShowAllowance = prefs.getBool('nabang_show_daily_allowance') ?? true;
+      final savedMode = prefs.getString('nabang_allowance_mode') ?? 'balance';
+      final savedCustom = prefs.getDouble('nabang_allowance_custom_amount') ?? 50000;
+      final savedPayday = prefs.getInt('nabang_payday_day') ?? 1;
+
       if (mounted) {
         setState(() {
           _accounts = accounts;
           _categories = categories;
           _transactions = transactions;
           _totalBalance = totalBal;
+          _monthlyBudget = budgetSum > 0 ? budgetSum : null;
           _displayName = computedName;
+          _showBalance = savedShowBalance;
+          _showDailyAllowance = savedShowAllowance;
+          _allowanceMode = savedMode;
+          _customAllowanceAmount = savedCustom;
+          _paydayDay = savedPayday;
           _isLoading = false;
         });
       }
@@ -89,10 +121,51 @@ class DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> _toggleShowBalance() async {
+    final next = !_showBalance;
+    setState(() => _showBalance = next);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('nabang_show_balance', next);
+  }
+
+  Future<void> _hideDailyAllowance() async {
+    setState(() => _showDailyAllowance = false);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('nabang_show_daily_allowance', false);
+  }
+
+  Future<void> _restoreDailyAllowance() async {
+    setState(() => _showDailyAllowance = true);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('nabang_show_daily_allowance', true);
+  }
+
+  Future<void> _saveAllowanceSettings(String mode, num customAmount, int paydayDay) async {
+    setState(() {
+      _allowanceMode = mode;
+      _customAllowanceAmount = customAmount;
+      _paydayDay = paydayDay;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('nabang_allowance_mode', mode);
+    await prefs.setDouble('nabang_allowance_custom_amount', customAmount.toDouble());
+    await prefs.setInt('nabang_payday_day', paydayDay);
+  }
+
   List<TransactionModel> get _filteredTransactions {
     final now = DateTime.now();
     return _transactions.where((tx) {
-      if (_selectedPeriod == 'this_month') {
+      if (_selectedPeriod == 'today') {
+        return tx.occurredAt.year == now.year &&
+            tx.occurredAt.month == now.month &&
+            tx.occurredAt.day == now.day;
+      } else if (_selectedPeriod == 'last_7_days') {
+        final sevenDaysAgo = DateTime(now.year, now.month, now.day - 6);
+        return tx.occurredAt.isAfter(sevenDaysAgo) ||
+            (tx.occurredAt.year == sevenDaysAgo.year &&
+                tx.occurredAt.month == sevenDaysAgo.month &&
+                tx.occurredAt.day == sevenDaysAgo.day);
+      } else if (_selectedPeriod == 'this_month') {
         return tx.occurredAt.year == now.year && tx.occurredAt.month == now.month;
       } else if (_selectedPeriod == 'last_3_months') {
         final threeMonthsAgo = DateTime(now.year, now.month - 3, now.day);
@@ -102,6 +175,20 @@ class DashboardScreenState extends State<DashboardScreen> {
       }
       return true;
     }).toList();
+  }
+
+  num get _todayExpense {
+    final now = DateTime.now();
+    num total = 0;
+    for (final tx in _transactions) {
+      if (tx.type == 'expense' &&
+          tx.occurredAt.year == now.year &&
+          tx.occurredAt.month == now.month &&
+          tx.occurredAt.day == now.day) {
+        total += tx.amount;
+      }
+    }
+    return total;
   }
 
   num get _periodIncome {
@@ -343,7 +430,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                               ),
                               const SizedBox(width: 8),
                               InkWell(
-                                onTap: () => setState(() => _showBalance = !_showBalance),
+                                onTap: _toggleShowBalance,
                                 borderRadius: BorderRadius.circular(20),
                                 child: Padding(
                                   padding: const EdgeInsets.all(4.0),
@@ -486,6 +573,23 @@ class DashboardScreenState extends State<DashboardScreen> {
                                   icon: const Icon(Icons.pie_chart_outline, size: 14),
                                   label: const Text('Anggaran', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                 ),
+                                OutlinedButton.icon(
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (_) => const WarungScreen()),
+                                    );
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF8F3242),
+                                    backgroundColor: const Color(0xFFFFF1F2),
+                                    side: const BorderSide(color: Color(0xFFFECDD3)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    minimumSize: const Size(0, 36),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  icon: const Icon(Icons.restaurant, size: 14),
+                                  label: const Text('Catatan Warung', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                ),
                               ],
                             ),
                           ],
@@ -506,6 +610,55 @@ class DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 18),
+
+              // Widget Cerdas: Jatah Jajan Hari Ini (Safe-to-Spend)
+              if (_showDailyAllowance)
+                DailyAllowanceCard(
+                  todayExpense: _todayExpense,
+                  totalBalance: _totalBalance,
+                  monthlyBudget: _monthlyBudget,
+                  showBalance: _showBalance,
+                  onOpenExpenseSheet: () => _openAddTransactionSheet('expense'),
+                  onHide: _hideDailyAllowance,
+                  mode: _allowanceMode,
+                  customAmount: _customAllowanceAmount,
+                  paydayDay: _paydayDay,
+                  onSaveSettings: _saveAllowanceSettings,
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: NabangColors.border),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.shield_outlined, size: 16, color: NabangColors.primary),
+                          SizedBox(width: 8),
+                          Text(
+                            'Widget Jatah Jajan disembunyikan',
+                            style: TextStyle(fontSize: 12, color: NabangColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: _restoreDailyAllowance,
+                        style: TextButton.styleFrom(
+                          foregroundColor: NabangColors.primary,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          minimumSize: const Size(0, 32),
+                        ),
+                        child: const Text('Tampilkan', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 20),
 
                 // 4. Menu Aksi Cepat Ikon Bulat (Grid 6 Menu ala Livin' Mandiri)
@@ -561,6 +714,17 @@ class DashboardScreenState extends State<DashboardScreen> {
                             iconColor: const Color(0xFFBE123C),
                             onTap: () => _openAddTransactionSheet('expense'),
                           ),
+                          _buildQuickActionButton(
+                            icon: Icons.restaurant,
+                            label: 'Warung',
+                            bgColor: const Color(0xFFFFF1F2),
+                            iconColor: const Color(0xFF8F3242),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const WarungScreen()),
+                              );
+                            },
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -588,6 +752,13 @@ class DashboardScreenState extends State<DashboardScreen> {
                             iconColor: const Color(0xFF6B21A8),
                             onTap: () => widget.onNavigateTab(2),
                           ),
+                          _buildQuickActionButton(
+                            icon: Icons.receipt_long,
+                            label: 'Mutasi',
+                            bgColor: const Color(0xFFE0E7FF),
+                            iconColor: const Color(0xFF3730A3),
+                            onTap: () => widget.onNavigateTab(1),
+                          ),
                         ],
                       ),
                     ],
@@ -603,6 +774,10 @@ class DashboardScreenState extends State<DashboardScreen> {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
+                          _buildPeriodChip('today', 'Hari Ini'),
+                          const SizedBox(width: 6),
+                          _buildPeriodChip('last_7_days', '7 Hari'),
+                          const SizedBox(width: 6),
                           _buildPeriodChip('this_month', 'Bulan Ini'),
                           const SizedBox(width: 6),
                           _buildPeriodChip('last_3_months', '3 Bulan'),

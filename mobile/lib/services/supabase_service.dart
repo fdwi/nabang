@@ -4,6 +4,7 @@ import '../models/category_model.dart';
 import '../models/transaction_model.dart';
 import '../models/goal_model.dart';
 import '../models/budget_model.dart';
+import '../models/warung_model.dart';
 
 class SupabaseService {
   static final SupabaseService instance = SupabaseService._internal();
@@ -347,5 +348,102 @@ class SupabaseService {
       'display_name': name.trim(),
       'updated_at': DateTime.now().toIso8601String(),
     });
+  }
+
+  // ==================== WARUNG ORDERS ====================
+
+  Future<List<WarungOrderModel>> getWarungOrders() async {
+    final userId = currentUser?.id;
+    if (userId == null) return [];
+
+    final raw = await _client
+        .from('warung_orders')
+        .select()
+        .eq('user_id', userId)
+        .order('order_date', ascending: false)
+        .order('created_at', ascending: false);
+
+    return (raw as List).map((json) => WarungOrderModel.fromJson(json)).toList();
+  }
+
+  Future<void> createWarungOrder({
+    required String title,
+    String? notes,
+    required List<WarungOrderItem> items,
+    required num totalAmount,
+    required String paymentStatus, // 'kasbon' | 'lunas'
+    String? accountId,
+    required DateTime orderDate,
+  }) async {
+    final userId = currentUser?.id;
+    if (userId == null) throw Exception('Sesi tidak ditemukan.');
+
+    final dateStr =
+        "${orderDate.year}-${orderDate.month.toString().padLeft(2, '0')}-${orderDate.day.toString().padLeft(2, '0')}";
+
+    final itemsPayload = items.map((e) => e.toJson()).toList();
+
+    await _client.from('warung_orders').insert({
+      'user_id': userId,
+      'title': title.trim(),
+      'notes': notes?.trim(),
+      'items': itemsPayload,
+      'total_amount': totalAmount,
+      'payment_status': paymentStatus,
+      'account_id': accountId,
+      'order_date': dateStr,
+    });
+
+    // Auto potong saldo jika statusnya lunas dan akun dipilih
+    if (paymentStatus == 'lunas' && accountId != null && accountId.isNotEmpty) {
+      await _client.from('transactions').insert({
+        'user_id': userId,
+        'account_id': accountId,
+        'amount': totalAmount,
+        'type': 'expense',
+        'description': 'Warung: ${title.trim()}',
+        'occurred_at': DateTime.now().toIso8601String(),
+      });
+    }
+  }
+
+  Future<void> updateWarungOrderStatus({
+    required String orderId,
+    required String orderTitle,
+    required num totalAmount,
+    required String newStatus, // 'kasbon' | 'lunas'
+    String? accountId,
+  }) async {
+    final userId = currentUser?.id;
+    if (userId == null) throw Exception('Sesi tidak ditemukan.');
+
+    final updateData = <String, dynamic>{
+      'payment_status': newStatus,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+    if (accountId != null && accountId.isNotEmpty) {
+      updateData['account_id'] = accountId;
+    }
+
+    await _client.from('warung_orders').update(updateData).eq('id', orderId).eq('user_id', userId);
+
+    // Auto potong saldo jika berubah jadi lunas dan akun dipilih
+    if (newStatus == 'lunas' && accountId != null && accountId.isNotEmpty) {
+      await _client.from('transactions').insert({
+        'user_id': userId,
+        'account_id': accountId,
+        'amount': totalAmount,
+        'type': 'expense',
+        'description': 'Pelunasan Warung: ${orderTitle.trim()}',
+        'occurred_at': DateTime.now().toIso8601String(),
+      });
+    }
+  }
+
+  Future<void> deleteWarungOrder(String orderId) async {
+    final userId = currentUser?.id;
+    if (userId == null) throw Exception('Sesi tidak ditemukan.');
+
+    await _client.from('warung_orders').delete().eq('id', orderId).eq('user_id', userId);
   }
 }

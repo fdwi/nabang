@@ -18,6 +18,7 @@ class NabangColors {
 
   // Neutral Palette
   static const Color background = Color(0xFFFAFBFC);
+  static const Color inputBackground = Color(0xFFF8FAFC);
   static const Color surface = Colors.white;
   static const Color card = Colors.white;
   static const Color border = Color(0xFFE2E8F0);

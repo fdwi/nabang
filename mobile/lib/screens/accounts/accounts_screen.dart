@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/colors.dart';
 import '../../core/formatters/currency_formatter.dart';
 import '../../models/account_model.dart';
@@ -14,15 +15,38 @@ class AccountsScreen extends StatefulWidget {
 
 class _AccountsScreenState extends State<AccountsScreen> {
   bool _isLoading = true;
+  bool _showBalance = true;
   List<AccountModel> _accounts = [];
 
   @override
   void initState() {
     super.initState();
+    _loadPreferences();
     _loadData();
   }
 
+  Future<void> _loadPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (mounted) {
+        setState(() {
+          _showBalance = prefs.getBool('show_balance') ?? true;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _toggleShowBalance() async {
+    final next = !_showBalance;
+    setState(() => _showBalance = next);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('show_balance', next);
+    } catch (_) {}
+  }
+
   Future<void> _loadData() async {
+    _loadPreferences();
     setState(() => _isLoading = true);
     try {
       final accs = await SupabaseService.instance.getAccounts();
@@ -124,10 +148,23 @@ class _AccountsScreenState extends State<AccountsScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Total Saldo Tersedia', style: TextStyle(color: NabangColors.textSecondary, fontSize: 12)),
+                              Row(
+                                children: [
+                                  const Text('Total Saldo Tersedia', style: TextStyle(color: NabangColors.textSecondary, fontSize: 12)),
+                                  const SizedBox(width: 6),
+                                  GestureDetector(
+                                    onTap: _toggleShowBalance,
+                                    child: Icon(
+                                      _showBalance ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                      size: 16,
+                                      color: NabangColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                               const SizedBox(height: 4),
                               Text(
-                                CurrencyFormatter.formatRupiah(total),
+                                _showBalance ? CurrencyFormatter.formatRupiah(total) : '••••••••',
                                 style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
@@ -196,7 +233,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '${acc.accountType.toUpperCase()} • Saldo Awal: ${CurrencyFormatter.formatRupiah(acc.openingBalance)}',
+                                      '${acc.accountType.toUpperCase()} • Saldo Awal: ${_showBalance ? CurrencyFormatter.formatRupiah(acc.openingBalance) : "••••"}',
                                       style: const TextStyle(fontSize: 11, color: NabangColors.textSecondary),
                                     ),
                                   ],
@@ -206,7 +243,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    CurrencyFormatter.formatRupiah(acc.currentBalance),
+                                    _showBalance ? CurrencyFormatter.formatRupiah(acc.currentBalance) : '••••••',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 15,
