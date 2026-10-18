@@ -798,28 +798,24 @@ class DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 20),
 
                 // 5. Baris Filter Periode
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildPeriodChip('today', 'Hari Ini'),
-                          const SizedBox(width: 6),
-                          _buildPeriodChip('last_7_days', '7 Hari'),
-                          const SizedBox(width: 6),
-                          _buildPeriodChip('this_month', 'Bulan Ini'),
-                          const SizedBox(width: 6),
-                          _buildPeriodChip('last_3_months', '3 Bulan'),
-                          const SizedBox(width: 6),
-                          _buildPeriodChip('this_year', 'Tahun Ini'),
-                          const SizedBox(width: 6),
-                          _buildPeriodChip('all', 'Semua'),
-                        ],
-                      ),
-                    ),
-                  ],
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      _buildPeriodChip('today', 'Hari Ini'),
+                      const SizedBox(width: 6),
+                      _buildPeriodChip('last_7_days', '7 Hari'),
+                      const SizedBox(width: 6),
+                      _buildPeriodChip('this_month', 'Bulan Ini'),
+                      const SizedBox(width: 6),
+                      _buildPeriodChip('last_3_months', '3 Bulan'),
+                      const SizedBox(width: 6),
+                      _buildPeriodChip('this_year', 'Tahun Ini'),
+                      const SizedBox(width: 6),
+                      _buildPeriodChip('all', 'Semua'),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 14),
 

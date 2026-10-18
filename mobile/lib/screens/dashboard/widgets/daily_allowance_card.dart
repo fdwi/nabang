@@ -270,63 +270,68 @@ class _DailyAllowanceCardState extends State<DailyAllowanceCard> {
         children: [
           // Header: Shield Icon, Title, Safe-to-Spend badge, Action buttons
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: statusBgColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(statusIcon, color: statusColor, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            'Jatah Jajan Hari Ini',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: NabangColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFE4E6),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'SAFE-TO-SPEND',
-                              style: TextStyle(
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF9F1239),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        widget.mode == 'custom'
-                            ? 'Target: ${CurrencyFormatter.formatRupiah(widget.customAmount)} / hari'
-                            : 'Hitungan aman pengeluaran harian Anda',
-                        style: const TextStyle(fontSize: 10.5, color: NabangColors.textSecondary),
-                      ),
-                    ],
-                  ),
-                ],
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: statusBgColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(statusIcon, color: statusColor, size: 20),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      runSpacing: 2,
+                      children: [
+                        const Text(
+                          'Jatah Jajan Hari Ini',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: NabangColors.textPrimary,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFE4E6),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: const Text(
+                            'SAFE-TO-SPEND',
+                            style: TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF9F1239),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.mode == 'custom'
+                          ? 'Target: ${CurrencyFormatter.formatRupiah(widget.customAmount)} / hari'
+                          : 'Hitungan aman pengeluaran harian',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 10.5, color: NabangColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   InkWell(
                     onTap: _openSettingsDialog,
@@ -339,6 +344,7 @@ class _DailyAllowanceCardState extends State<DailyAllowanceCard> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.tune, size: 12, color: NabangColors.textSecondary),
                           SizedBox(width: 4),
@@ -353,7 +359,7 @@ class _DailyAllowanceCardState extends State<DailyAllowanceCard> {
                     borderRadius: BorderRadius.circular(8),
                     child: const Padding(
                       padding: EdgeInsets.all(4.0),
-                      child: Icon(Icons.close, size: 16, color: NabangColors.textSecondary),
+                      child: Icon(Icons.close, size: 18, color: NabangColors.textSecondary),
                     ),
                   ),
                 ],
@@ -375,44 +381,58 @@ class _DailyAllowanceCardState extends State<DailyAllowanceCard> {
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Sisa Jatah Jajan Hari Ini',
-                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: NabangColors.textSecondary),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          widget.showBalance
-                              ? CurrencyFormatter.formatRupiah(allowance.remainingToday)
-                              : 'Rp ••••••••••',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                            color: statusColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusBgColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(statusIcon, size: 12, color: statusColor),
-                          const SizedBox(width: 4),
-                          Text(
-                            statusText,
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
+                          const Text(
+                            'Sisa Jatah Jajan Hari Ini',
+                            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: NabangColors.textSecondary),
+                          ),
+                          const SizedBox(height: 2),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              widget.showBalance
+                                  ? CurrencyFormatter.formatRupiah(allowance.remainingToday)
+                                  : 'Rp ••••••••••',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.5,
+                                color: statusColor,
+                              ),
+                            ),
                           ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusBgColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(statusIcon, size: 12, color: statusColor),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                statusText,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -487,35 +507,45 @@ class _DailyAllowanceCardState extends State<DailyAllowanceCard> {
           Row(
             children: [
               Expanded(
+                flex: 3,
                 child: ElevatedButton.icon(
                   onPressed: widget.onOpenExpenseSheet,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFB34455),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     elevation: 0,
                   ),
                   icon: const Icon(Icons.add, size: 14),
-                  label: const Text('Catat Pengeluaran', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Catat Pengeluaran', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const WarungScreen()),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF8F3242),
-                  backgroundColor: const Color(0xFFFFF1F2),
-                  side: const BorderSide(color: Color(0xFFFECDD3)),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              Expanded(
+                flex: 2,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const WarungScreen()),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF8F3242),
+                    backgroundColor: const Color(0xFFFFF1F2),
+                    side: const BorderSide(color: Color(0xFFFECDD3)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.restaurant, size: 14),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Warung', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
                 ),
-                icon: const Icon(Icons.restaurant, size: 14),
-                label: const Text('Warung', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
