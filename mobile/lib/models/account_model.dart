@@ -1,3 +1,5 @@
+import '../core/formatters/currency_formatter.dart';
+
 class AccountModel {
   final String id;
   final String name;
@@ -16,13 +18,13 @@ class AccountModel {
   });
 
   factory AccountModel.fromJson(Map<String, dynamic> json, {num? calculatedBalance}) {
-    final opening = (json['opening_balance'] ?? json['initial_balance'] ?? 0) as num;
+    final opening = CurrencyFormatter.parseNum(json['opening_balance'] ?? json['initial_balance']);
     return AccountModel(
       id: json['id'] as String,
       name: json['name'] as String,
       accountType: (json['account_type'] ?? json['type'] ?? 'cash') as String,
       openingBalance: opening,
-      currentBalance: calculatedBalance ?? (json['current_balance'] ?? opening) as num,
+      currentBalance: calculatedBalance ?? CurrencyFormatter.parseNum(json['current_balance'] ?? opening),
       isActive: json['is_active'] as bool? ?? true,
     );
   }

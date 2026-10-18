@@ -1,3 +1,5 @@
+import '../core/formatters/currency_formatter.dart';
+
 class BudgetModel {
   final String id;
   final String categoryId;
@@ -30,8 +32,8 @@ class BudgetModel {
           ? (json['categories']['name'] as String? ?? 'Umum')
           : (json['category_name'] as String? ?? 'Umum'),
       month: json['month'] as String,
-      limitAmount: (json['limit_amount'] as num?) ?? 0,
-      spentAmount: calculatedSpent ?? ((json['spent_amount'] as num?) ?? 0),
+      limitAmount: CurrencyFormatter.parseNum(json['limit_amount']),
+      spentAmount: calculatedSpent ?? CurrencyFormatter.parseNum(json['spent_amount']),
     );
   }
 

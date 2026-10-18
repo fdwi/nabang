@@ -1,3 +1,5 @@
+import '../core/formatters/currency_formatter.dart';
+
 class GoalModel {
   final String id;
   final String name;
@@ -26,14 +28,14 @@ class GoalModel {
   }
 
   factory GoalModel.fromJson(Map<String, dynamic> json, {num? calculatedContributions}) {
-    final initial = (json['initial_amount'] as num?) ?? 0;
+    final initial = CurrencyFormatter.parseNum(json['initial_amount']);
     final total = initial + (calculatedContributions ?? 0);
     return GoalModel(
       id: json['id'] as String,
       name: json['name'] as String,
-      targetAmount: (json['target_amount'] as num?) ?? 0,
+      targetAmount: CurrencyFormatter.parseNum(json['target_amount']),
       initialAmount: initial,
-      currentAmount: (json['current_amount'] ?? total) as num,
+      currentAmount: json['current_amount'] != null ? CurrencyFormatter.parseNum(json['current_amount']) : total,
       deadline: json['deadline'] != null ? DateTime.tryParse(json['deadline'] as String) : null,
       status: json['status'] as String? ?? 'active',
       color: json['color'] as String?,

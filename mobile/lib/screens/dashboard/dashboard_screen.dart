@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/colors.dart';
 import '../../core/formatters/currency_formatter.dart';
 import '../../models/account_model.dart';
+import '../../models/budget_model.dart';
 import '../../models/category_model.dart';
 import '../../models/transaction_model.dart';
 import '../../services/supabase_service.dart';
@@ -60,21 +61,49 @@ class DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadData() async {
     try {
       final now = DateTime.now();
-      final currentMonthStr = "${now.year}-${now.month.toString().padLeft(2, '0')}";
+      final currentMonthStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-01";
 
-      final accountsFuture = SupabaseService.instance.getAccounts();
-      final categoriesFuture = SupabaseService.instance.getCategories();
-      final transactionsFuture = SupabaseService.instance.getTransactions(limit: 50);
-      final profileNameFuture = SupabaseService.instance.getDisplayName();
-      final budgetsFuture = SupabaseService.instance.getBudgets(month: currentMonthStr);
-      final prefsFuture = SharedPreferences.getInstance();
+      List<AccountModel> accounts = [];
+      try {
+        accounts = await SupabaseService.instance.getAccounts();
+      } catch (e) {
+        debugPrint('Error loading accounts: $e');
+      }
 
-      final accounts = await accountsFuture;
-      final categories = await categoriesFuture;
-      final transactions = await transactionsFuture;
-      final profileName = await profileNameFuture;
-      final budgets = await budgetsFuture;
-      final prefs = await prefsFuture;
+      List<CategoryModel> categories = [];
+      try {
+        categories = await SupabaseService.instance.getCategories();
+      } catch (e) {
+        debugPrint('Error loading categories: $e');
+      }
+
+      List<TransactionModel> transactions = [];
+      try {
+        transactions = await SupabaseService.instance.getTransactions(limit: 50);
+      } catch (e) {
+        debugPrint('Error loading transactions: $e');
+      }
+
+      String? profileName;
+      try {
+        profileName = await SupabaseService.instance.getDisplayName();
+      } catch (e) {
+        debugPrint('Error loading profile name: $e');
+      }
+
+      List<BudgetModel> budgets = [];
+      try {
+        budgets = await SupabaseService.instance.getBudgets(month: currentMonthStr);
+      } catch (e) {
+        debugPrint('Error loading budgets: $e');
+      }
+
+      SharedPreferences? prefs;
+      try {
+        prefs = await SharedPreferences.getInstance();
+      } catch (e) {
+        debugPrint('Error loading shared preferences: $e');
+      }
 
       num budgetSum = 0;
       for (final b in budgets) {
@@ -94,11 +123,12 @@ class DashboardScreenState extends State<DashboardScreen> {
         computedName = userEmail.split('@')[0];
       }
 
-      final savedShowBalance = prefs.getBool('nabang_show_balance') ?? true;
-      final savedShowAllowance = prefs.getBool('nabang_show_daily_allowance') ?? true;
-      final savedMode = prefs.getString('nabang_allowance_mode') ?? 'balance';
-      final savedCustom = prefs.getDouble('nabang_allowance_custom_amount') ?? 50000;
-      final savedPayday = prefs.getInt('nabang_payday_day') ?? 1;
+      final savedShowBalance = prefs?.getBool('nabang_show_balance') ?? true;
+      final savedShowAllowance = prefs?.getBool('nabang_show_daily_allowance') ?? true;
+      final savedMode = prefs?.getString('nabang_allowance_mode') ?? 'balance';
+      final customVal = prefs?.get('nabang_allowance_custom_amount');
+      final savedCustom = CurrencyFormatter.parseNum(customVal, 50000);
+      final savedPayday = prefs?.getInt('nabang_payday_day') ?? 1;
 
       if (mounted) {
         setState(() {
@@ -116,7 +146,8 @@ class DashboardScreenState extends State<DashboardScreen> {
           _isLoading = false;
         });
       }
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('Error loading dashboard data: $e\n$st');
       if (mounted) setState(() => _isLoading = false);
     }
   }

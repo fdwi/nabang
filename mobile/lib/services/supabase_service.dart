@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/formatters/currency_formatter.dart';
 import '../models/account_model.dart';
 import '../models/category_model.dart';
 import '../models/transaction_model.dart';
@@ -60,11 +61,11 @@ class SupabaseService {
 
     return (rawAccounts as List).map((accJson) {
       final accId = accJson['id'] as String;
-      final opening = (accJson['opening_balance'] ?? 0) as num;
+      final opening = CurrencyFormatter.parseNum(accJson['opening_balance']);
       num current = opening;
 
       for (final tx in (rawTxs as List)) {
-        final amt = (tx['amount'] as num?) ?? 0;
+        final amt = CurrencyFormatter.parseNum(tx['amount']);
         final type = tx['type'] as String;
         final srcId = tx['account_id'] as String?;
         final dstId = tx['destination_account_id'] as String?;
@@ -266,11 +267,13 @@ class SupabaseService {
     final userId = currentUser?.id;
     if (userId == null) return [];
 
+    final formattedMonth = month.length == 7 ? '$month-01' : month;
+
     final rawBudgets = await _client
         .from('budgets')
         .select('*, categories:category_id(name)')
         .eq('user_id', userId)
-        .eq('month', month);
+        .eq('month', formattedMonth);
 
     final rawTxs = await _client
         .from('transactions')
@@ -284,8 +287,8 @@ class SupabaseService {
       for (final tx in (rawTxs as List)) {
         if (tx['category_id'] == catId) {
           final occurredAtStr = tx['occurred_at'] as String?;
-          if (occurredAtStr != null && occurredAtStr.startsWith(month)) {
-            spent += (tx['amount'] as num?) ?? 0;
+          if (occurredAtStr != null && occurredAtStr.startsWith(month.substring(0, 7))) {
+            spent += CurrencyFormatter.parseNum(tx['amount']);
           }
         }
       }
@@ -301,12 +304,14 @@ class SupabaseService {
     final userId = currentUser?.id;
     if (userId == null) throw Exception('Sesi tidak ditemukan.');
 
+    final formattedMonth = month.length == 7 ? '$month-01' : month;
+
     final existing = await _client
         .from('budgets')
         .select('id')
         .eq('user_id', userId)
         .eq('category_id', categoryId)
-        .eq('month', month)
+        .eq('month', formattedMonth)
         .maybeSingle();
 
     if (existing != null) {
@@ -318,7 +323,7 @@ class SupabaseService {
       await _client.from('budgets').insert({
         'user_id': userId,
         'category_id': categoryId,
-        'month': month,
+        'month': formattedMonth,
         'limit_amount': limitAmount,
       });
     }

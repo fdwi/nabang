@@ -39,4 +39,11 @@ class CurrencyFormatter {
     if (month >= 1 && month <= 12) return months[month - 1];
     return '$month';
   }
+
+  static num parseNum(dynamic val, [num defaultValue = 0]) {
+    if (val == null) return defaultValue;
+    if (val is num) return val;
+    if (val is String) return num.tryParse(val) ?? defaultValue;
+    return defaultValue;
+  }
 }

@@ -1,3 +1,5 @@
+import '../core/formatters/currency_formatter.dart';
+
 class TransactionModel {
   final String id;
   final String accountId;
@@ -33,7 +35,7 @@ class TransactionModel {
       destinationAccountId: json['destination_account_id'] as String?,
       categoryId: json['category_id'] as String?,
       type: json['type'] as String,
-      amount: (json['amount'] as num?) ?? 0,
+      amount: CurrencyFormatter.parseNum(json['amount']),
       occurredAt: DateTime.tryParse(dateStr) ?? DateTime.now(),
       description: (json['description'] ?? json['note']) as String?,
       accountName: json['accounts'] != null ? json['accounts']['name'] as String? : null,
